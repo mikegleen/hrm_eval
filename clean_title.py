@@ -1,3 +1,7 @@
+"""
+    Remove HTML tags from the first two rows in a CSV file.
+"""
+
 import csv
 import sys
 from bs4 import BeautifulSoup as Bs
@@ -10,7 +14,7 @@ def clean_row(dirtyrow):
         n += 1
         soup = Bs(cell, 'html.parser')
         text = soup.get_text()
-        print('{}: {}-->{}'.format(n, cell, text))
+        # print('{}: {}-->{}'.format(n, cell, text))
         row.append(text)
     return row
 
