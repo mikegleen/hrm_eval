@@ -15,7 +15,7 @@ def assign_numbers(row):
     for cell in row[SKIPCOLS:]:
         if cell:
             q_num += 1
-            nums.append(q_num)
+            nums.append('Q{}'.format(q_num))
         else:
             nums.append('')
     return nums
