@@ -5,18 +5,23 @@ import sys
 import time
 
 WHR_LOCATION = (51.5920, -.3870)  # lat, lng
-
 URL = 'http://maps.googleapis.com/maps/api/geocode/json'
-payload = {'sensor': 'false'}
 
 
 def get_address(postcode):
-    payload['address'] = ''.join(postcode.split())  # remove all whitespace
+    payload = dict(sensor='false')
+    address = ''.join(postcode.split())  # remove all whitespace
+    payload['address'] = address + ',UK'
     response = requests.get(URL, params=payload)
     return response.json()
 
 
 def get_distance(postcode):
+    """
+    :param postcode:
+    :return: a tuple consisting of the distance in miles (a float) and the
+             formatted address as a string.
+    """
     print('trying: ', postcode)
     j = get_address(postcode)
     # print(json.dumps(j, indent=4))
@@ -33,7 +38,7 @@ def main(postcodefilename, addressfilename):
     addressfile = open(addressfilename, 'w')
 
     for postcode in postcodefile:
-        time.sleep(2)
+        time.sleep(2)  # google gets annoyed if we hit it too quickly.
         postcode = ''.join(postcode.split())
         if postcode:
             distance, addr = get_distance(postcode)
