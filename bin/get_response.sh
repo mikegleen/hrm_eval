@@ -1,21 +1,34 @@
 #!/bin/bash
-function process {
-    INFILE=$RESPPATH/$DATADIR/CSV/Sheet_1.csv
-    # ls $INFILE
-    python3 src/remove_nuls.py $INFILE temp/remove_nuls.txt
-    python3 src/clean_title.py temp/remove_nuls.txt temp/clean_title.txt
-    python3 src/assign_nums.py temp/clean_title.txt temp/precleaned.csv
-    python3 ~/pyprj/misc/put_bom.py temp/precleaned.csv $CLEANDIR/$DATADIR/cleaned.csv
-}
+#
+# Two input parameters are required, the data directory under "exports" and
+# the subdirectory under .../response.
+#
+# Example:
+#   called as: ./get_response.sh 2016-12-31 condensed_actual
+#   input:  exports/2016-12-31/response/condensed_actual/CSV/Sheet_1.csv
+#   output: exports/2016-12-31/cleaned/condensed_actual.csv
+#
+# In this case DATADIR is 2016-12-31 and EXPORTNAME is condensed_actual.
+# The exported data can be in one sheet or two. If in two sheets, the script
+# will merge them. The number of columns to skip in the second sheet is hard
+# coded in merge_csv.py.
+#
+DATADIR=$1
+EXPORTNAME=$2
 
-DATADIR=Data_All_Num_2016-12-18
-RESPPATH=exports/response
-CLEANDIR=exports/cleaned
-INFILE=$RESPPATH/$DATADIR/CSV/Sheet_1.csv
-# ls $INFILE
-python3 src/remove_nuls.py $INFILE temp/remove_nuls.txt
-python3 src/clean_title.py temp/remove_nuls.txt temp/clean_title.txt
-[ -e "$CLEANDIR/$DATADIR" ] || mkdir $CLEANDIR/$DATADIR
-python3 src/assign_nums.py temp/clean_title.txt temp/precleaned.csv
-python3 ~/pyprj/misc/put_bom.py temp/precleaned.csv $CLEANDIR/$DATADIR/cleaned.csv
-rm temp/*
+RESPDIR=exports/$DATADIR/response/$EXPORTNAME/CSV
+CLEANDIR=exports/$DATADIR/cleaned
+set -e
+[ -e "$CLEANDIR" ] || mkdir -p $CLEANDIR
+[ -e "temp" ] || mkdir temp
+python3 src/remove_nuls.py $RESPDIR/Sheet_1.csv temp/rem_nuls_1.csv
+if [ -e "$RESPDIR/Sheet_2.csv" ]
+then
+    python3 src/remove_nuls.py $RESPDIR/Sheet_2.csv temp/rem_nuls_2.csv
+    python3 src/merge_csv.py temp/rem_nuls_1.csv temp/rem_nuls_2.csv temp/merged.csv
+else
+    cp temp/rem_nuls_1.csv temp/merged.csv
+fi
+python3 src/clean_title.py temp/merged.csv temp/clean_title.csv
+python3 ~/pyprj/misc/put_bom.py temp/clean_title.csv $CLEANDIR/$EXPORTNAME.csv
+#rm temp/*
