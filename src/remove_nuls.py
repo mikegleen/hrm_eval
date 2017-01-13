@@ -9,8 +9,9 @@ def main():
         while byteline != b'':
             n += 1
             cleanline = byteline.replace(b'\x00', b'')
-            if cleanline != byteline:
-                print('{}: {}->{}'.format(n, len(byteline), len(cleanline)))
+            # if cleanline != byteline:
+            #     print('Removed nuls from line {}: len {}-> len {}'
+            #           .format(n, len(byteline), len(cleanline)))
             outfile.write(cleanline)
             byteline = infile.readline()
 
