@@ -20,6 +20,7 @@ import time
 
 WHR_LOCATION = (51.5920, -.3870)  # lat, lng
 URL = 'http://maps.googleapis.com/maps/api/geocode/json'
+MAXJSONFILES = 5  # The number of JSON files to save. Older ones are deleted.
 PcData = namedtuple('PcData', 'distance address'.split())
 
 """
@@ -53,15 +54,33 @@ def load_json():
 
 
 def save_json(pcdict):
+    """
+    Create a JSON file in the DBPATH directory and delete any old JSON files
+    found.
+
+    :param pcdict: the dictionary containing the postcode data.
+    :return: None
+    """
+    os.makedirs(DBPATH, exist_ok=True)
     filename = datetime.datetime.today().strftime("%Y%m%d-%H%M%S.json")
     filepath = os.path.join(DBPATH, filename)
     with open(filepath, 'w') as jsonfile:
         json.dump(pcdict, jsonfile, indent=4)
     print('{} postcodes saved to {}.'.format(len(pcdict), filename))
+    # delete old json files
+    files = sorted(os.listdir(DBPATH))
+    files = [f for f in files if f.endswith('.json')]
+    if len(files) <= MAXJSONFILES:
+        return
+    for f in files[:len(files) - MAXJSONFILES]:
+        os.remove(os.path.join(DBPATH, f))
+        print('Deleting ', os.path.join(DBPATH, f))
 
 
 def get_json(postcode):
     """
+    Fetch this postcode's JSON formatted data from Google.
+
     :param postcode: UK Postcode with all white space removed.
     :return: The dictionary of the JSON string returned by requests.
     """
@@ -100,18 +119,21 @@ def main(postcodefilename, addressfilename):
     pcdata = load_json()
     save_pcdata_len = len(pcdata)
     for postcode in postcodefile:
-        time.sleep(1)  # google gets annoyed if we hit it too quickly.
         postcode = ''.join(postcode.split()).upper()
         if postcode and postcode not in pcdata:
+            time.sleep(1)  # google gets annoyed if we hit it too quickly.
             distance, addr = get_distance(postcode)
             pcdata[postcode] = PcData(distance, addr)
     for postcode in sorted(pcdata):
         distance = pcdata[postcode][0]
         addr = pcdata[postcode][1]
-        print('{:9},{:8.2f}, {}'.format(postcode, distance, addr),
+        pcc = postcode + ','  # to prettyprint
+        print('{:9}{:8.2f}, "{}"'.format(pcc, distance, addr),
               file=addressfile)
     if len(pcdata) > save_pcdata_len:
         save_json(pcdata)
+    else:
+        print('No new postcodes found.')
 
 
 def one_postcode(postcode):
