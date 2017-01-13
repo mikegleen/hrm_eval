@@ -1,4 +1,6 @@
+*/__pycache__
 *.csv
 *.txt
 data/
 exports
+*.ipynb
