@@ -10,71 +10,23 @@ If the postcode from the text file is not in the database, the information is
 fetched from google maps.
 """
 from collections import namedtuple
-import datetime
 import haversine
-import json
 import os.path
 import requests
 import sys
 import time
 
+import jsonutil
+
 WHR_LOCATION = (51.5920, -.3870)  # lat, lng
 URL = 'http://maps.googleapis.com/maps/api/geocode/json'
-MAXJSONFILES = 5  # The number of JSON files to save. Older ones are deleted.
-PcData = namedtuple('PcData', 'distance address'.split())
+PcData = namedtuple('PcData', 'distance address count'.split())
 
 """
     The DBPATH directory contains the latest JSON files with the most recently
     created table of postcode data.
 """
 DBPATH = os.path.join('data', 'postcode')
-
-
-def load_json():
-    """
-    Iterate over the JSON files in DBPATH, find the most recent one.
-    :return: The loaded dictionary.
-    """
-    files = os.listdir(DBPATH)
-    pcdict = {}
-    jsonfilename = None
-    for f in sorted(files, reverse=True):
-        print('-->', f)
-        if f.endswith('.json'):
-            jsonfilename = os.path.join(DBPATH, f)
-            break
-    try:
-        with open(jsonfilename) as jsonfile:
-            print('Loading database file {}'.format(jsonfilename))
-            pcdict = json.load(jsonfile)
-            print('{} postcodes loaded'.format(len(pcdict)))
-    except TypeError:  # if no files found
-        print('No files found in {}'.format(DBPATH))
-    return pcdict
-
-
-def save_json(pcdict):
-    """
-    Create a JSON file in the DBPATH directory and delete any old JSON files
-    found.
-
-    :param pcdict: the dictionary containing the postcode data.
-    :return: None
-    """
-    os.makedirs(DBPATH, exist_ok=True)
-    filename = datetime.datetime.today().strftime("%Y%m%d-%H%M%S.json")
-    filepath = os.path.join(DBPATH, filename)
-    with open(filepath, 'w') as jsonfile:
-        json.dump(pcdict, jsonfile, indent=4)
-    print('{} postcodes saved to {}.'.format(len(pcdict), filename))
-    # delete old json files
-    files = sorted(os.listdir(DBPATH))
-    files = [f for f in files if f.endswith('.json')]
-    if len(files) <= MAXJSONFILES:
-        return
-    for f in files[:len(files) - MAXJSONFILES]:
-        os.remove(os.path.join(DBPATH, f))
-        print('Deleting ', os.path.join(DBPATH, f))
 
 
 def get_json(postcode):
@@ -116,29 +68,44 @@ def get_distance(postcode):
 def main(postcodefilename, addressfilename):
     postcodefile = open(postcodefilename)
     addressfile = open(addressfilename, 'w')
-    pcdata = load_json()
-    save_pcdata_len = len(pcdata)
+    pcdata = jsonutil.load_json(DBPATH)
+
+    for postcode in pcdata:
+        pcdata[postcode][2] = 0  # reinitialize counts
     for postcode in postcodefile:
         postcode = ''.join(postcode.split()).upper()
-        if postcode and postcode not in pcdata:
+        if not postcode:
+            continue
+        if postcode in pcdata:
+            pcdata[postcode][2] += 1
+        else:
             time.sleep(1)  # google gets annoyed if we hit it too quickly.
-            distance, addr = get_distance(postcode)
-            pcdata[postcode] = PcData(distance, addr)
+            try:
+                distance, addr = get_distance(postcode)
+                pcdata[postcode] = PcData(distance, addr, 1)
+            except IndexError:
+                print('Error: {} not found, ignored.'.format(postcode))
     for postcode in sorted(pcdata):
         distance = pcdata[postcode][0]
         addr = pcdata[postcode][1]
-        pcc = postcode + ','  # to prettyprint
-        print('{:9}{:8.2f}, "{}"'.format(pcc, distance, addr),
-              file=addressfile)
-    if len(pcdata) > save_pcdata_len:
-        save_json(pcdata)
-    else:
-        print('No new postcodes found.')
+        count = pcdata[postcode][2]
+        if count > 1:
+            pcc = postcode + ',{},'.format(count)
+            print('{:12}{:8.2f}, "{}"'.format(pcc, distance, addr),
+                  file=addressfile)
+        else:
+            pcc = postcode + ',,'  # to prettyprint
+            print('{:12}{:8.2f}, "{}"'.format(pcc, distance, addr),
+                  file=addressfile)
+    jsonutil.save_json(pcdata, DBPATH)
 
 
 def one_postcode(postcode):
     postcode = ''.join(postcode.split()).upper()
-    distance, addr = get_distance(postcode)
+    try:
+        distance, addr = get_distance(postcode)
+    except IndexError:
+        return postcode, 0, "**** NOT FOUND ****"
     return postcode, distance, addr
 
 if __name__ == '__main__':
@@ -147,6 +114,9 @@ if __name__ == '__main__':
     if len(sys.argv) > 2:
         main(sys.argv[1], sys.argv[2])
     else:
+        if len(sys.argv[1]) > 12:
+            print('If one parameter is given, it must be a valid postcode.')
+            sys.exit(1)
         row = one_postcode(sys.argv[1])
         print('{},{:8.2f}, {}'.format(*row))
 
