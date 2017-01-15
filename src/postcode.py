@@ -3,13 +3,17 @@ Update our database of postcodes, retaining the distance from the museum.
 The database is stored in a JSON file in DBPATH with a name based on the
 creation date and time.
 
-Input is a text file with one line per postcode; empty lines are ignored. You
-may have to delete the top row(s) when extracting the data from a spreadsheet.
+Input is the CSV file exported from SurveyMonkey with options expanded and
+actual.
 
 If the postcode from the text file is not in the database, the information is
 fetched from google maps.
+
+Output is a new JSON file in the same directory as the input file but with the
+current date/time. Also output is a report in the file named in parameter 2.
 """
 from collections import namedtuple
+import csv
 import haversine
 import os.path
 import requests
@@ -19,6 +23,7 @@ import time
 import jsonutil
 
 WHR_LOCATION = (51.5920, -.3870)  # lat, lng
+POSTCODE_COL = 230
 URL = 'http://maps.googleapis.com/maps/api/geocode/json'
 PcData = namedtuple('PcData', 'distance address count'.split())
 
@@ -65,15 +70,20 @@ def get_distance(postcode):
     return distance, addr
 
 
-def main(postcodefilename, addressfilename):
-    postcodefile = open(postcodefilename)
-    addressfile = open(addressfilename, 'w')
+def main(postcodefilename, reportfilename):
+    postcodefile = open(postcodefilename, newline='')
+    monkeyreader = csv.reader(postcodefile)
+    for n in range(3):
+        next(monkeyreader)
+
+    reportfile = open(reportfilename, 'w')
     pcdata = jsonutil.load_json(DBPATH)
 
     for postcode in pcdata:
         pcdata[postcode][2] = 0  # reinitialize counts
-    for postcode in postcodefile:
-        postcode = ''.join(postcode.split()).upper()
+    for row in monkeyreader:
+        postcode = row[POSTCODE_COL]
+        postcode = ''.join(postcode.split()).upper()  # remove embedded spaces
         if not postcode:
             continue
         if postcode in pcdata:
@@ -92,11 +102,11 @@ def main(postcodefilename, addressfilename):
         if count > 1:
             pcc = postcode + ',{},'.format(count)
             print('{:12}{:8.2f}, "{}"'.format(pcc, distance, addr),
-                  file=addressfile)
+                  file=reportfile)
         else:
             pcc = postcode + ',,'  # to prettyprint
             print('{:12}{:8.2f}, "{}"'.format(pcc, distance, addr),
-                  file=addressfile)
+                  file=reportfile)
     jsonutil.save_json(pcdata, DBPATH)
 
 
@@ -117,6 +127,6 @@ if __name__ == '__main__':
         if len(sys.argv[1]) > 12:
             print('If one parameter is given, it must be a valid postcode.')
             sys.exit(1)
-        row = one_postcode(sys.argv[1])
-        print('{},{:8.2f}, {}'.format(*row))
+        result = one_postcode(sys.argv[1])
+        print('{},{:8.2f}, {}'.format(*result))
 
