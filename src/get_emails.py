@@ -4,21 +4,22 @@ and update our database of email addresses.
 
 Print new addresses.
 
+input: CSV file name
 
 """
 
-import argparse
 import csv
 import os.path
 import sys
 
 import jsonutil
+from config import skiprows, defcol
 
 DBPATH = os.path.join('data', 'email_addrs')
-WANT_NEWSLETTER_COL = 277
-WANT_NOTIFY_COL = 278
-VOLUNTEER_COL = 279
-EMAIL_ADDR_COL = 283
+WANT_NEWSLETTER_COL = defcol['want_newsletter']
+WANT_NOTIFY_COL = defcol['want_notify']
+VOLUNTEER_COL = defcol['volunteer']
+EMAIL_ADDR_COL = defcol['email_addr']
 
 NEWSLETTER = 'newsletter'
 VOLUNTEER = 'volunteer'
@@ -35,15 +36,13 @@ def main(csvfilename):
     # Use dictionaries instead of sets because json doesn't support sets
     new_newsletter_dict = {}
     new_volunteer_dict = {}
-    nrow = 3
+    nrow = skiprows
     dbdict = jsonutil.load_json(DBPATH)
     if not dbdict:
         dbdict = init_dbdict()
-    old_len_newsletter = len(dbdict[NEWSLETTER])
-    old_len_volunteer = len(dbdict[VOLUNTEER])
     with open(csvfilename, newline='') as csvfile:
         monkeyreader = csv.reader(csvfile)
-        for n in range(3):
+        for n in range(skiprows):
             next(monkeyreader)
         for row in monkeyreader:
             nrow += 1
@@ -55,6 +54,13 @@ def main(csvfilename):
                 if not email_addr:
                     print('email address missing, row', nrow)
                     continue
+                # SurveyMonkey has validated the email address format. If this
+                # test fails, probably the CSV format is bad, so quit here.
+                if '@' not in email_addr:
+                    print('invalid email address in row {}: "{}"'.format(
+                        nrow, email_addr
+                    ))
+                    sys.exit(1)
             if want_newsletter or want_notify:
                 if email_addr not in dbdict[NEWSLETTER]:
                     new_newsletter_dict[email_addr] = 0
