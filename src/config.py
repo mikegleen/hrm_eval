@@ -2,7 +2,7 @@
 Configuration file for processing SurveyMonkey CSV files.
 
 This configuration assumes that the CSV file has been cleaned up by
-get_response.sh which adds a row at the front containing the question numbers.
+get_response.sh which adds a row at the top containing the question numbers.
 
 To use the unmodified export from SurveyMonkey, change skiprows to 2.
 
