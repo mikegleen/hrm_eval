@@ -16,6 +16,7 @@
 DATADIR=$1
 EXPORTNAME=$2
 
+pushd ~/pyprj/hrm/evaluation
 RESPDIR=exports/$DATADIR/response/$EXPORTNAME/CSV
 CLEANDIR=exports/$DATADIR/cleaned
 set -e
@@ -27,8 +28,11 @@ then
     python3 src/remove_nuls.py $RESPDIR/Sheet_2.csv temp/rem_nuls_2.csv
     python3 src/merge_csv.py temp/rem_nuls_1.csv temp/rem_nuls_2.csv temp/merged.csv
 else
-    cp temp/rem_nuls_1.csv temp/merged.csv
+    mv temp/rem_nuls_1.csv temp/merged.csv
 fi
 python3 src/clean_title.py temp/merged.csv temp/clean_title.csv
 python3 ~/pyprj/misc/put_bom.py temp/clean_title.csv $CLEANDIR/$EXPORTNAME.csv
 #rm temp/*
+python3 src/get_emails.py --dryrun $CLEANDIR/$EXPORTNAME.csv
+echo python3 src/get_emails.py $CLEANDIR/$EXPORTNAME.csv
+
