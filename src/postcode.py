@@ -3,14 +3,15 @@ Update our database of postcodes, retaining the distance from the museum.
 The database is stored in a JSON file in DBPATH with a name based on the
 creation date and time.
 
-Input is the CSV file exported from SurveyMonkey with options expanded and
-actual.
+Input is the CSV file exported from SurveyMonkey with options "expanded" and
+"actual".
 
-If the postcode from the text file is not in the database, the information is
+If the postcode from the CSV file is not in the database, the information is
 fetched from google maps.
 
 Output is a new JSON file in the same directory as the input file but with the
 current date/time. Also output is a report in the file named in parameter 2.
+The oldest JSON file is deleted if there are more than 5 of them.
 """
 from collections import namedtuple
 import csv
@@ -20,12 +21,15 @@ import requests
 import sys
 import time
 
+# local imports
+import config
 import jsonutil
 
 WHR_LOCATION = (51.5920, -.3870)  # lat, lng
-POSTCODE_COL = 230
+POSTCODE_COL = config.defcol['postcode']
 URL = 'http://maps.googleapis.com/maps/api/geocode/json'
-PcData = namedtuple('PcData', 'distance address count'.split())
+# replace PcData with simple list because we now need to update the count.
+# PcData = namedtuple('PcData', 'distance address count'.split())
 
 """
     The DBPATH directory contains the latest JSON files with the most recently
@@ -59,7 +63,7 @@ def get_distance(postcode):
     :return: a tuple consisting of the distance in miles (a float) and the
              formatted address as a string.
     """
-    print('trying: ', postcode)
+    print('get_distance: ', postcode)
     j = get_json(postcode)
     # print(json.dumps(j, indent=4))
     l = j['results'][0]['geometry']['location']
@@ -73,7 +77,7 @@ def get_distance(postcode):
 def main(postcodefilename, reportfilename):
     postcodefile = open(postcodefilename, newline='')
     monkeyreader = csv.reader(postcodefile)
-    for n in range(3):
+    for n in range(config.skiprows):
         next(monkeyreader)
 
     reportfile = open(reportfilename, 'w')
@@ -92,7 +96,8 @@ def main(postcodefilename, reportfilename):
             time.sleep(1)  # google gets annoyed if we hit it too quickly.
             try:
                 distance, addr = get_distance(postcode)
-                pcdata[postcode] = PcData(distance, addr, 1)
+                # pcdata[postcode] = PcData(distance, addr, 1)
+                pcdata[postcode] = [distance, addr, 1]
             except IndexError:
                 print('Error: {} not found, ignored.'.format(postcode))
     for postcode in sorted(pcdata):
