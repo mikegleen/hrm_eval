@@ -1,3 +1,12 @@
+"""
+Remove zero-valued bytes from a file.
+
+Parameters:
+    1. Input file
+    2. Output file
+
+This process may be harmful if the files contain multi-byte characters.
+"""
 import sys
 
 

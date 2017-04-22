@@ -9,6 +9,7 @@ input: CSV file name
 """
 import argparse
 import csv
+import datetime
 import os.path
 import sys
 
@@ -20,6 +21,10 @@ WANT_NEWSLETTER_COL = defcol['want_newsletter']
 WANT_NOTIFY_COL = defcol['want_notify']
 VOLUNTEER_COL = defcol['volunteer']
 EMAIL_ADDR_COL = defcol['email_addr']
+# The following is the text inserted by clean_title.py in the first row of the
+# column containing the email address. This may change if the survey is
+# modified, so we use it to validate the input.
+EMAIL_QUESTION = 'q22'
 
 NEWSLETTER = 'newsletter'
 VOLUNTEER = 'volunteer'
@@ -33,7 +38,7 @@ def init_dbdict():
 
 
 def onerow(row, nrow, dbdict, new_newsletter_dict, new_volunteer_dict):
-    rtn = False
+    rtn = False  # return True if we've found a new email address
     want_newsletter = row[WANT_NEWSLETTER_COL].strip()
     want_notify = row[WANT_NOTIFY_COL].strip()
     want_volunteer = row[VOLUNTEER_COL].strip()
@@ -45,10 +50,8 @@ def onerow(row, nrow, dbdict, new_newsletter_dict, new_volunteer_dict):
         # SurveyMonkey has validated the email address format. If this
         # test fails, probably the CSV format is bad, so quit here.
         if '@' not in email_addr:
-            print('Invalid email address in row {}: "{}"'.format(
-                nrow, email_addr
-            ))
-            sys.exit(1)
+            raise ValueError('Invalid email address in row {}: "{}"'.
+                             format(nrow, email_addr))
     if want_newsletter or want_notify:
         if email_addr not in dbdict[NEWSLETTER]:
             rtn = True
@@ -63,17 +66,22 @@ def onerow(row, nrow, dbdict, new_newsletter_dict, new_volunteer_dict):
 
 
 def print_report(args, new_newsletter_dict, new_volunteer_dict):
-    reportfile = open(args.report, 'w')
-    print('Wants newsletter:')
-    print('Wants newsletter:', file=reportfile)
+    def prints(*data):
+        print(*data)
+        print(*data, file=reportfile)
+    filename = _starttime.strftime("emails_%Y%m%d-%H%M%S.txt")
+    reportpath = os.path.join(args.outdir, filename)
+    reportfile = open(reportpath, 'w')
+    prints('Wants newsletter:')
+    if not len(new_newsletter_dict):
+        prints('  ', 'none')
     for addr in sorted(new_newsletter_dict):
-        print('  ', addr)
-        print('  ', addr, file=reportfile)
-    print('Wants to volunteer:')
-    print('Wants to volunteer:', file=reportfile)
+        prints('  ', addr)
+    prints('Wants to volunteer:')
+    if not len(new_volunteer_dict):
+        prints('  ', 'none')
     for addr in sorted(new_volunteer_dict):
-        print('  ', addr)
-        print('  ', addr, file=reportfile)
+        prints('  ', addr)
 
 
 def main(args):
@@ -89,7 +97,15 @@ def main(args):
         dbdict = init_dbdict()
     with open(csvfilename, newline='') as csvfile:
         monkeyreader = csv.reader(csvfile)
-        for n in range(skiprows):
+        nskip = skiprows
+        if skiprows > 0:  # can only validate if there is a heading
+            row = next(monkeyreader)
+            if row[EMAIL_ADDR_COL].strip() != EMAIL_QUESTION:
+                raise ValueError('Validation check fails. Col {} of first row'
+                                 ' not equal to {}'.
+                                 format(EMAIL_ADDR_COL, EMAIL_QUESTION))
+            nskip -= 1
+        for n in range(nskip):
             next(monkeyreader)
         for row in monkeyreader:
             nrow += 1
@@ -103,7 +119,7 @@ def main(args):
     elif args.dryrun:
         print('Dry run. Database not updated.')
     else:
-        jsonutil.save_json(dbdict, DBPATH)
+        jsonutil.save_json(dbdict, DBPATH, starttime=_starttime)
 
 
 def getargs():
@@ -116,16 +132,21 @@ def getargs():
     parser.add_argument('infile', help='''
     The CSV file that has been cleaned by remove_nuls.py, merge_csv.py, and
     clean_title.py''')
-    parser.add_argument('-r', '--report', default='report.txt', help='''
-    The name of the file to contain the report of new email addresses.''')
+    parser.add_argument('-o', '--outdir', help='''Directory to contain the
+        output report file. If omitted, the default is the directory
+        "results" in the same directory that the input file resides.
+        ''')
     parser.add_argument('-y', '--dryrun', action='store_true', help='''
     If specified, do not update the database.''')
     args = parser.parse_args()
+    if not args.outdir:
+        args.outdir = 'results'
     return args
 
 
 if __name__ == '__main__':
     if sys.version_info.major < 3:
         raise ImportError('requires Python 3')
+    _starttime = datetime.datetime.today()
     _args = getargs()
     main(_args)

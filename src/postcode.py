@@ -30,7 +30,8 @@ POSTCODE_COL = config.defcol['postcode']
 URL = 'http://maps.googleapis.com/maps/api/geocode/json'
 # replace PcData with simple list because we now need to update the count.
 # PcData = namedtuple('PcData', 'distance address count'.split())
-
+PATCHES = {'W5': 'W5,LONDON',
+           'CM': 'CM,CHELMSFORD'}
 """
     The DBPATH directory contains the latest JSON files with the most recently
     created table of postcode data.
@@ -63,6 +64,9 @@ def get_distance(postcode):
     :return: a tuple consisting of the distance in miles (a float) and the
              formatted address as a string.
     """
+    if postcode in PATCHES:
+        print('patching: {}->{}'.format(postcode, PATCHES[postcode]))
+        postcode = PATCHES[postcode]
     print('get_distance: ', postcode)
     j = get_json(postcode)
     # print(json.dumps(j, indent=4))
@@ -129,7 +133,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 2:
         main(sys.argv[1], sys.argv[2])
     else:
-        if len(sys.argv[1]) > 12:
+        if len(sys.argv[1]) > 20:
             print('If one parameter is given, it must be a valid postcode.')
             sys.exit(1)
         result = one_postcode(sys.argv[1])
