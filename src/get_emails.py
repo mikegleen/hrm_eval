@@ -2,7 +2,8 @@
 get_emails.py - Read the CSV file that has been exported from SurveyMonkey
 and update our database of email addresses.
 
-Print new addresses.
+Print new email addresses to a file in:
+    results/new_emails/emails_<date>-<time>.txt.
 
 input: CSV file name
 
@@ -68,6 +69,7 @@ def onerow(row, nrow, dbdict, new_newsletter_dict, new_volunteer_dict):
 def print_report(args, new_newsletter_dict, new_volunteer_dict):
     def prints(*data):
         print(*data)
+        # noinspection PyTypeChecker
         print(*data, file=reportfile)
     filename = _starttime.strftime("emails_%Y%m%d-%H%M%S.txt")
     reportpath = os.path.join(args.outdir, filename)
@@ -134,13 +136,13 @@ def getargs():
     clean_title.py''')
     parser.add_argument('-o', '--outdir', help='''Directory to contain the
         output report file. If omitted, the default is the directory
-        "results" in the same directory that the input file resides.
+        "results/new_emails" in the same directory that the input file resides.
         ''')
     parser.add_argument('-y', '--dryrun', action='store_true', help='''
     If specified, do not update the database.''')
     args = parser.parse_args()
     if not args.outdir:
-        args.outdir = 'results'
+        args.outdir = os.path.join('results', 'new_emails')
     return args
 
 
