@@ -28,8 +28,8 @@ from assign_nums import num_dict
 
 CLEANED = "/Users/mlg/Downloads/hrm/evaluation/data_exports/2017-06-13/cleaned/all_exp_act.csv"
 
-TO_COMPARE = {'q15':  # gender
-              'q13'  # likely to recommend
+TO_COMPARE = {'q13':  # gender
+              'q15'  # likely to recommend
               }
 # qtext - the text name of the question, from row 2
 # ans_dict - dictionary mapping the answer text to the count
@@ -214,9 +214,12 @@ def create_xlsx(major_qdata, minor_qdata):
             col += 1
             c = ws.cell(row=rownum, column=col, value=minqd.ans_dict[minans])
             c.font = Font(bold=True)
-            c = ws.cell(row=rownum + 1, column=col,
-                        value=minqd.ans_dict[minans] / minqd.total)
-            c.style = 'Percent'
+            if minqd.total:
+                c = ws.cell(row=rownum + 1, column=col,
+                            value=minqd.ans_dict[minans] / minqd.total)
+                c.style = 'Percent'
+            else:
+                c = ws.cell(row=rownum + 1, column=col, value='NaN')
 
     wb.save(sys.argv[2])
 
@@ -249,6 +252,8 @@ def getargs():
     parser.add_argument('-m', '--multiple', action='store_true', help='''
     Specifies whether the minor question may have multiple (or no) answers. If
     not specified, exactly one minor answer must be selected.''')
+    parser.add_argument('-j', '--major', help='''Not implemented yet.''')
+    parser.add_argument('-n', '--minor', help='''Not implemented yet.''')
     args = parser.parse_args()
     return args
 
