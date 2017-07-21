@@ -6,8 +6,11 @@
 """
 
 import csv
+from datetime import datetime as dt
 import sys
 from bs4 import BeautifulSoup as Bs
+
+from excel_cols import col2num
 
 FIXED_HEADER = 'RespondentID,CollectorID,StartDate,EndDate,IP Address,'
 FIXED_HEADER += 'Email Address,First Name,LastName,Custom Data'
@@ -39,6 +42,24 @@ def clean_row(dirtyrow):
     return row
 
 
+def fix1date(row, col):
+    coln = col2num(col)
+    s = row[coln]
+    if not s:
+        return
+    if ':' in s:
+        d = dt.strptime(s, '%m/%d/%Y %H:%M:%S')
+    else:
+        # print(f'---------- "{s}"')
+        d = dt.strptime(s, '%m/%d/%Y')
+    row[coln] = d.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def fix_dates(row):
+    for col in ('c', 'd', 'j'):
+        fix1date(row, col)
+
+
 def main(infilename, outfilename):
     infile = open(infilename, newline='')
     reader = csv.reader(infile)
@@ -54,6 +75,7 @@ def main(infilename, outfilename):
     writer.writerow(row2)
     for line in reader:
         row = clean_row(line)
+        fix_dates(row)
         writer.writerow(row)
 
 
