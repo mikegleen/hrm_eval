@@ -41,6 +41,7 @@ def getgroupsize(row, q5col):
 def print_report(parties, notsure, q3q5conflict):
     def prints(*data):
         print(*data)
+        # noinspection PyTypeChecker
         print(*data, file=reportfile)
     filename = _starttime.strftime("q5stats_%Y%m%d-%H%M%S.txt")
     reportpath = os.path.join(_args.outdir, filename)
