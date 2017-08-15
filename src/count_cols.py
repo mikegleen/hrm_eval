@@ -1,3 +1,7 @@
+"""
+    For each row in a CSV file, print the row number and the number of columns.
+"""
+
 import csv
 import sys
 
