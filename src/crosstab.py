@@ -2,7 +2,7 @@
 """
 Input is a CSV file produced by SurveyMonkey. The creation method is:
 1. Click on "Analyze Results".
-2. Select the tab "Individual Responses".
+2. Step deleted.
 3. Click on "Export All"
 4. Select the dropdown "All response data".
 5. Select the option ".XLS" (the leftmost option).
@@ -19,14 +19,11 @@ from collections import OrderedDict
 from copy import deepcopy
 import csv
 import sys
-from openpyxl.styles import colors
-from openpyxl.styles import Font, Color, NamedStyle
+from openpyxl.styles import Font # , Color, NamedStyle
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
 from assign_nums import num_dict
-
-CLEANED = "/Users/mlg/Downloads/hrm/evaluation/data_exports/2017-06-13/cleaned/all_exp_act.csv"
 
 TO_COMPARE = {'q13':  # gender
               'q15'  # likely to recommend
