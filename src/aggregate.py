@@ -170,11 +170,17 @@ def new_data_row(row, qdict, namap):
         if question not in INV_AGGDICT:
             append_cols(newrow, row, ix, length)
             continue
+        aggd = AGGDICT[question]
+        nansdict = OrderedDict([(ad.newcol, '') for ad in aggd])
+        print('nansdict', nansdict)
         for coln in range(ix, ix + length):
             try:
                 newans = namap[coln]
             except KeyError:
                 continue  # skip this column
+            if row[coln]:
+                nansdict[newans] = row[coln]
+        newrow += nansdict.values()
     return newrow
 
 
