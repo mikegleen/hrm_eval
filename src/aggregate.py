@@ -82,9 +82,9 @@ def inv_aggdict():
     """
     invdict = OrderedDict()
     for q in AGGDICT:
-        qlist = AGGDICT[q]  # the list of aggmap namedtuples for this question
+        anslist = AGGDICT[q]  # the list of aggmap namedtuples for this question
         invmap = OrderedDict()
-        for amap in qlist:
+        for amap in anslist:
             for origcol in amap.oldcols:
                 invmap[origcol] = amap.newcol
         invdict[q] = invmap
@@ -127,7 +127,8 @@ def new_ans_map(arow, qdict):
     corresponding aggregated columns.
     :param arow: Third row of the CSV file
     :param qdict: The OrderedDict created by get_question_dict
-    :return: dict for ea question to be aggregated, map aggregated column
+    :return: dict for ea column, the corresponding aggregated answer if one
+             exists.
     """
     amap = {}
     newarow = [arow[i] for i in range(SKIPCOLS)]  # initialize to constant cols
@@ -142,21 +143,38 @@ def new_ans_map(arow, qdict):
         for qi in agdict:  # qi is a qinfo namedtuple
             newarow.append(qi.newcol)
         # Build a list of column offset -> agg column name
-        aqmap = {}  # for this question map agg answer to col in row
         for coln in range(ix, ix + length):
             old_ans = arow[coln]
             try:
-                aqmap[coln] = oamap[old_ans]
+                amap[coln] = oamap[old_ans]
             except KeyError:
                 continue  # we will be ignoring this column
-        amap[question] = aqmap
-        trace(2, 'question {} answers {}', question, aqmap)
+        trace(2, 'after question {} answers(len={}) {}', question, len(amap),
+              amap)
     trace(1, 'answer map: {}', amap)
     return amap, newarow
 
 
-def new_data_row(row, qdict):
-    newrow = []
+def new_data_row(row, qdict, namap):
+    """
+
+    :param row: the next data row
+    :param qdict: created by new_q_row
+    :param namap: created by new_ans_map
+    :return:
+    """
+    newrow = [row[i] for i in range(SKIPCOLS)]  # initialize to constant cols
+    for question, qinf in qdict.items():
+        ix = qinf.ix
+        length = qinf.len
+        if question not in INV_AGGDICT:
+            append_cols(newrow, row, ix, length)
+            continue
+        for coln in range(ix, ix + length):
+            try:
+                newans = namap[coln]
+            except KeyError:
+                continue  # skip this column
     return newrow
 
 
@@ -178,7 +196,7 @@ def main():
     na_map, na_row = new_ans_map(answer_text_row, q_dict)
     writer.writerow(na_row)
     for row in reader:
-        newrow = new_data_row(row, q_dict)
+        newrow = new_data_row(row, q_dict, na_map)
         writer.writerow(newrow)
 
 
