@@ -25,7 +25,6 @@ import codecs
 from collections import namedtuple, OrderedDict
 import csv
 import sys
-from copy import deepcopy
 
 from config import SKIPCOLS
 
@@ -124,7 +123,7 @@ def inv_aggdict():
             for origcol in amap.oldcols:
                 invmap[origcol] = amap.newcol
         invdict[q] = invmap
-    trace(1, 'inverted agg dict: {}', invdict)
+    trace(2, 'inverted agg dict: {}', invdict)
     return invdict
 
 
@@ -228,20 +227,20 @@ def new_data_row(row, qdict, namap):
 def main():
     reader = csv.reader(infile)
     writer = csv.writer(outfile)
-    q_row = next(reader)  # has values like q1,,,,q2,,,q3,,etc.
+    # row 1: has values like q1,,,,q2,,,q3,,etc.
+    q_row = next(reader)
     trace(2, 'q_row(len {}): {}', len(q_row), q_row)
     q_dict = get_question_dict(q_row)
     # q_dict: question # -> (column index, length)
-    # row 1:
     nq_row = new_q_row(q_row, q_dict)
     trace(2, 'nq_row(len {}): {}', len(nq_row), nq_row)
     writer.writerow(nq_row)
-    # row 2:
+    # row 2: contains question text in cols under question #'s
     question_text_row = next(reader)
     nq_row2 = new_q_row(question_text_row, q_dict)
     trace(2, 'nq_row2(len {}): {}', len(nq_row2), nq_row2)
     writer.writerow(nq_row2)
-    # row 3:
+    # row 3: contains question answers
     answer_text_row = next(reader)
     na_map, na_row = new_ans_map(answer_text_row, q_dict)
     writer.writerow(na_row)
