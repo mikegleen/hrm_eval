@@ -81,7 +81,7 @@ def get_distance(postcode):
 def main(postcodefilename, reportfilename):
     postcodefile = open(postcodefilename, newline='')
     monkeyreader = csv.reader(postcodefile)
-    for n in range(config.skiprows):
+    for n in range(config.SKIPROWS):
         next(monkeyreader)
 
     reportfile = open(reportfilename, 'w')

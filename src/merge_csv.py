@@ -2,7 +2,7 @@ import csv
 import sys
 
 # The number of columns in the 2nd file to skip
-SKIPCOLS = 9
+from config import SKIPCOLS
 
 
 def main():
@@ -20,6 +20,7 @@ def main():
             line2 = next(reader2)
         except StopIteration:
             print('CSV file 2 is too short.')
+            sys.exit(-1)
         writer.writerow(line1 + line2[SKIPCOLS:])
     try:
         next(reader2)
