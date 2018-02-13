@@ -1,6 +1,10 @@
 */__pycache__
 *.csv
 *.txt
+*.xlsx
+*.zip
 data/
+misc
+results
 exports
 *.ipynb

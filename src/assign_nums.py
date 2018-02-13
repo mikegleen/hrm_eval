@@ -2,23 +2,39 @@
     Assign question numbers. In the input file, questions start at column 10
     (column 9 if zero based). Only non-empty cells are counted.
 """
-
 import csv
 import sys
+from config import SKIPCOLS
 
-SKIPCOLS = 9
 
-
-def assign_numbers(row):
-    nums = ['' for n in range(SKIPCOLS)]
+def assign_numbers(row, skipcols=SKIPCOLS):
+    """
+        Input is the first row returned from the CSV file.
+        From the list containing Qnn entries in the corresponding columns,
+        build a list containing 'Qnn' where there was question text and
+        a zero-length string otherwise.
+    """
+    nums = ['' for n in range(skipcols)]
     q_num = 0
-    for cell in row[SKIPCOLS:]:
+    for cell in row[skipcols:]:
         if cell:
             q_num += 1
-            nums.append('Q{}'.format(q_num))
+            nums.append(f'Q{q_num}')
         else:
             nums.append('')
     return nums
+
+
+def num_dict(row, skipcols=SKIPCOLS):
+    """
+        Input is the first row returned from the CSV file.
+        From the list containing Qnn entries in the corresponding columns,
+        build a dictionary mapping <question #> -> <column #>.
+    """
+    en = enumerate(row[skipcols:])
+    # print(list(en))
+    nd = {t[1].upper(): t[0] + skipcols for t in en if t[1]}
+    return nd
 
 
 def main():

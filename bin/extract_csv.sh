@@ -60,7 +60,7 @@ python3 src/get_emails.py --dryrun $CLEANDIR/$EXPORTNAME.csv
 mv exports/${DATADIR}_${EXPORTNAME}.zip exports/old_zipfiles
 echo
 echo -e ${GREEN}If the dry run was ok, execute the following line to extract the
-echo -e email addresses and update the database:${NC}
+echo -e email addresses and update the database:${NOCOLOR}
 echo python3 src/get_emails.py $CLEANDIR/$EXPORTNAME.csv
 }
 #
