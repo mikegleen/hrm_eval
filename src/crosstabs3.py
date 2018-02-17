@@ -24,7 +24,8 @@ import codecs
 from collections import OrderedDict
 import csv
 import sys
-from openpyxl.styles import Font  # , Color, NamedStyle
+from openpyxl.styles import Font
+from openpyxl.styles.borders import Border, Side
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
@@ -39,6 +40,9 @@ MINOR_ANSWER_NAME_ROW = 4
 # The row number is incremented before each row is inserted.
 MINOR_COUNT_START = 7
 MINOR_COUNT_INCREMENT = 3
+
+LEFT_BORDER = Border(left=Side(border_style='thin'))
+
 
 '''
 TO_COMPARE = {'Q13':  # likely to recommend
@@ -253,14 +257,11 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
              for each major answer) have the same start/end column values.
     """
     # put the total values in the "VALID RESPONSES" row.
-    col = startcol
-    txt = question_text_row[q_dict[minor_qnum]]
-    txt = f'{minor_qnum.upper()}: {txt.upper()}'
-    cell = ws.cell(row=3, column=col, value=txt)
-    setbold(cell)
-    minor_qdata = None
+    col = startcol - 1
+    minor_qdata = row = None  # avoid warnings
     # Iterate over the answers for this minor question.
     for minans, mincount in major_qdata.minor_totals[minor_qnum].items():
+        col += 1
         ws.cell(row=MINOR_ANSWER_NAME_ROW, column=col, value=minans)
         ws.column_dimensions[get_column_letter(col)].width = len(minans) * 1.20
         row = MINOR_COUNT_START
@@ -271,7 +272,11 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
             row += MINOR_COUNT_INCREMENT
             minor_qdata = minor_qdata_dict[minor_qnum]
             setvalue(ws, row, col, minor_qdata.ans_count[minans], total)
-        col += 1
+    for row in range(3, row + 2):
+        ws.cell(row=row, column=startcol).border = LEFT_BORDER
+    txt = f'{minor_qnum.upper()}: {minor_qdata.qtext.upper()}'
+    cell = ws.cell(row=3, column=startcol, value=txt)
+    setbold(cell)
     return minor_qdata
 
 
@@ -315,7 +320,7 @@ def one_sheet(major_qdata):
     b6.style = 'Percent'
     b8.style = 'Percent'
     # Set the column width of the first column
-    colw = 0
+    colw = 22
     for q in j.ans_dict:
         w = len(q)
         if w > colw:
