@@ -49,12 +49,14 @@ TO_COMPARE = {'Q13':  # likely to recommend
               ('Q3',  # alone/with others
                'Q16')  # age
               }
-'''
 TO_COMPARE = {'Q1':  # likely to recommend
               ('Q2',  # alone/with others
                'Q3')  # age
               }
-QUESTIONS = ['Q' + n for n in '3,10,13,16,17,18,19'.split(',')]
+'''
+QUESTIONS = ['Q' + n for n in '3,10,13,15,16,17,18,19'.split(',')]
+TO_COMPARE = {major: [minor for minor in QUESTIONS if minor != major]
+              for major in QUESTIONS}
 
 
 class Qdata:
@@ -178,7 +180,7 @@ def make_major_qdata(major, infile):
     global q_dict, question_text_row, answer_text_row
     reader = csv.reader(infile)
     question_row = next(reader)  # has values like q1,,,,q2,,,q3,,etc.
-    # Create a dict mapping Q<n> -> column index
+    # Create a dict mapping Q<minor> -> column index
     q_dict = num_dict(question_row, _args.skipcols)
     question_text_row = next(reader)
     answer_text_row = next(reader)
@@ -239,8 +241,11 @@ def setvalue(worksheet, row, column, value, total):
     """
     cell = worksheet.cell(row=row, column=column, value=value)
     cell.font = Font(bold=True)
-    cell = worksheet.cell(row=row + 1, column=column, value=value / total)
-    cell.style = 'Percent'
+    if total:
+        cell = worksheet.cell(row=row + 1, column=column, value=value / total)
+        cell.style = 'Percent'
+    else:
+        worksheet.cell(row=row + 1, column=column, value='-')
 
 
 def one_minor(ws, major_qdata, minor_qnum, startcol):
@@ -263,7 +268,9 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
     for minans, mincount in major_qdata.minor_totals[minor_qnum].items():
         col += 1
         ws.cell(row=MINOR_ANSWER_NAME_ROW, column=col, value=minans)
-        ws.column_dimensions[get_column_letter(col)].width = len(minans) * 1.20
+        width = len(minans) * 1.10
+        width = 6. if width < 6. else width
+        ws.column_dimensions[get_column_letter(col)].width = width
         row = MINOR_COUNT_START
         setvalue(ws, row, col, mincount, major_qdata.total)
         total = major_qdata.minor_totals[minor_qnum][minans]
@@ -335,8 +342,11 @@ def one_sheet(major_qdata):
         ans_total = j.ans_count[majans]
         c = ws.cell(row=rownum, column=2, value=ans_total)
         c.font = Font(bold=True)
-        c = ws.cell(row=rownum + 1, column=2, value=ans_total / j.total)
-        c.style = 'Percent'
+        if j.total:
+            c = ws.cell(row=rownum + 1, column=2, value=ans_total / j.total)
+            c.style = 'Percent'
+        else:
+            ws.cell(row=rownum + 1, column=2, value='-')
 
     # Iterate over the minor questions, inserting the minor answers.
     coln = 3
