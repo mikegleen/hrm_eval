@@ -9,7 +9,7 @@ Input is a CSV file produced by extract_csv.sh. The creation method is:
 6. In "Data View", select "Original View".
 7. In "Columns", select "Expanded".
 8. In "Cells", select "Actual Answer Text".
-9. Rename the file in the format yyyy-mm-dd_n.zip where n is the last survey in
+9. Rename the file in the format yyyy-mm-dd_n.zip where minor is the last survey in
    the export.
 An input file might be:
     ~/Downloads/hrm/evaluation/data_exports/2017-11-05/cleaned/126.csv
@@ -22,7 +22,7 @@ from collections import OrderedDict
 from copy import deepcopy
 import csv
 import sys
-from openpyxl.styles import Font # , Color, NamedStyle
+from openpyxl.styles import Font  # , Color, NamedStyle
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
@@ -117,7 +117,7 @@ def make_major_qdata(major, infile):
     global q_dict, question_text_row, answer_text_row
     reader = csv.reader(infile)
     question_row = next(reader)  # has values like q1,,,,q2,,,q3,,etc.
-    q_dict = num_dict(question_row)  # dict mapping q<n> -> column index
+    q_dict = num_dict(question_row)  # dict mapping q<minor> -> column index
     question_text_row = next(reader)
     answer_text_row = next(reader)
     minor = TO_COMPARE[major]
@@ -242,7 +242,7 @@ def main():
 def getargs():
     parser = argparse.ArgumentParser(
         description='''
-
+    Create a crosstab xlsx file.
         ''')
     parser.add_argument('infile', help='''
          The CSV file that has been cleaned by extract_csv.sh''')
@@ -255,7 +255,7 @@ def getargs():
     Specifies whether the minor question may have multiple (or no) answers. If
     not specified, exactly one minor answer must be selected.''')
     parser.add_argument('-j', '--major', help='''Not implemented yet.''')
-    parser.add_argument('-n', '--minor', help='''Not implemented yet.''')
+    parser.add_argument('-minor', '--minor', help='''Not implemented yet.''')
     args = parser.parse_args()
     return args
 
