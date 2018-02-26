@@ -11,23 +11,10 @@ the column numbers accordingly.
 """
 from excel_cols import col2num
 
-skiprows = 3
-DEFCOL = {
-    'postcode': 'HW',
-    'want_newsletter': 'JR',
-    'want_notify': 'JS',
-    'volunteer': 'JT',
-    'email_addr': 'JX',
-}
-# updated 2017-01-25:
-DEFCOL = {
-    'postcode': 'HX',
-    'want_newsletter': 'JS',
-    'want_notify': 'JT',
-    'volunteer': 'JU',
-    'email_addr': 'JY',
-}
+SKIPCOLS = 9
+SKIPROWS = 3
 # updated 2017-02-18:
+# noinspection PyRedeclaration
 DEFCOL = {
     'postcode': 'IJ',
     'want_newsletter': 'KE',
@@ -36,3 +23,12 @@ DEFCOL = {
     'email_addr': 'KK',
 }
 defcol = {dc: col2num(DEFCOL[dc]) for dc in DEFCOL}
+
+CROSSTAB_TITLES = {'Q3': 'Visiting w. others',
+                   'Q10': 'Satisfaction',
+                   'Q13': 'Likely recommend',
+                   'Q15': 'Gender',
+                   'Q16': 'Age',
+                   'Q17': 'Disabled?',
+                   'Q18': 'Ethnicity',
+                   'Q19': 'Where live UK'}
