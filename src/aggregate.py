@@ -8,9 +8,9 @@ to 'under 55' and '55 and over'.
 Input is the cleaned file produced by extract_csv.sh.
 
 Processing depends upon the three header rows:
-1. Text q[n] where n is the question number in the first column corresponding
+1. Text q[minor] where minor is the question number in the first column corresponding
    to the Nth question
-2. In the column where a q[n] appears in row 1, row 2 contains the name of the
+2. In the column where a q[minor] appears in row 1, row 2 contains the name of the
    question.
 3. Each column associated with a question contains a possible answer.
 
@@ -31,8 +31,8 @@ from config import SKIPCOLS
 aggmap = namedtuple('aggmap', ('newcol', 'oldcols'))
 qinfo = namedtuple('qinfo', ('ix', 'len'))
 AGGLIST = [
-    (10, [aggmap('Not very', ('- very unsatisfied', '-2', '-3', '-4', '-5')),
-          aggmap('Quite', ('- satisfied', '-7', '-8')),
+    (10, [aggmap('Not very', ('- very unsatisfied', '- 2', '- 3', '- 4', '- 5')),
+          aggmap('Quite', ('- satisfied', '- 7', '- 8')),
           aggmap('Very', ('-9', '- extremely satisfied'))
           ]),
     (13, [aggmap('Not very', ('Very unlikely', 'Unlikely', 'Neither likely nor unlikely')),
@@ -62,6 +62,14 @@ AGGLIST = [
           aggmap('Elsewhere', ('elsewhere in UK', 'Not in UK')),
           ]),
 ]
+'''
+AGGLIST = [
+    (10, [aggmap('Not very', ('- very unsatisfied', '-2', '-3', '-4', '-5')),
+          aggmap('Quite', ('- satisfied', '-7', '-8')),
+          aggmap('Very', ('-9', '- extremely satisfied'))
+          ]),
+]
+'''
 AGGDICT = OrderedDict(AGGLIST)
 INV_AGGDICT = None  # this will be populated in the main code below
 # print(AGGDICT)
@@ -91,8 +99,8 @@ def get_question_dict(qrow):
     qndict[lastq + 1] = len(qrow)  # insert dummy question at end
     trace(2, 'qndict: {}', qndict)
     lir = list(enumerate(qndict.items()))
-    # lir = [(0, (1, IX1)), (1, (2, IX2)), ... , (n, (n+1, IXn)]
-    # where IXn is the n-th question's index in the row
+    # lir = [(0, (1, IX1)), (1, (2, IX2)), ... , (minor, (minor+1, IXn)]
+    # where IXn is the minor-th question's index in the row
     # print(lir)
     qdict = OrderedDict()
     for i, qix in lir[:-1]:  # iterate over all but the dummy last entry
@@ -121,7 +129,7 @@ def inv_aggdict():
         invmap = OrderedDict()
         for amap in anslist:
             for origcol in amap.oldcols:
-                invmap[origcol] = amap.newcol
+                invmap[origcol.strip()] = amap.newcol.strip()
         invdict[q] = invmap
     trace(2, 'inverted agg dict: {}', invdict)
     return invdict
@@ -181,7 +189,7 @@ def new_ans_map(arow, qdict):
             newarow.append(qi.newcol)
         # Build a list of column offset -> agg column name
         for coln in range(ix, ix + length):
-            old_ans = arow[coln]
+            old_ans = arow[coln].strip()
             try:
                 amap[coln] = oamap[old_ans]
             except KeyError:
@@ -244,7 +252,7 @@ def main():
     answer_text_row = next(reader)
     na_map, na_row = new_ans_map(answer_text_row, q_dict)
     writer.writerow(na_row)
-    # rows 4-n:
+    # rows 4-minor:
     for row in reader:
         newrow = new_data_row(row, q_dict, na_map)
         writer.writerow(newrow)
@@ -261,7 +269,7 @@ def getargs():
                         help='''output CSV file.
         ''')
     parser.add_argument('-v', '--verbose', default=1, type=int, help='''
-    ''')
+                        Control verbosity.''')
     _args = parser.parse_args()
     return _args
 
@@ -272,8 +280,8 @@ if __name__ == '__main__':
     # invd = inv_aggdict()
     # print(invd)
     args = getargs()
-    infile = codecs.open(sys.argv[1], 'r', 'utf-8-sig')
-    outfile = codecs.open(sys.argv[2], 'w', 'utf-8-sig')
+    infile = codecs.open(args.infile, 'r', 'utf-8-sig')
+    outfile = codecs.open(args.outfile, 'w', 'utf-8-sig')
     INV_AGGDICT = inv_aggdict()
     main()
     print('End aggregate.')
