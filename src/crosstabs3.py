@@ -24,37 +24,29 @@ import codecs
 from collections import OrderedDict
 import csv
 import sys
-from openpyxl.styles import Font
+from openpyxl.styles import Font, Alignment
 from openpyxl.styles.borders import Border, Side
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
 from assign_nums import num_dict
 from config import SKIPCOLS
+from config import CROSSTAB_TITLES as TITLES
 #
 # Constants for sheet creation:
 # The row to insert minor titles and answer names
-MINOR_TITLE_ROW = 3
-MINOR_ANSWER_NAME_ROW = 4
+MINOR_NUMBER_ROW = 3
+MINOR_TITLE_ROW = 4
+MINOR_ANSWER_NAME_ROW = 5
 # Specify the row number where we initialize the loop that inserts row counts.
 # The row number is incremented before each row is inserted.
-MINOR_COUNT_START = 7
+MINOR_COUNT_START = 8
 MINOR_COUNT_INCREMENT = 3
 
 LEFT_BORDER = Border(left=Side(border_style='thin'))
+CENTER = Alignment(horizontal='center')
 
-
-'''
-TO_COMPARE = {'Q13':  # likely to recommend
-              ('Q3',  # alone/with others
-               'Q16')  # age
-              }
-TO_COMPARE = {'Q1':  # likely to recommend
-              ('Q2',  # alone/with others
-               'Q3')  # age
-              }
-'''
-QUESTIONS = ['Q' + n for n in '3,10,13,15,16,17,18,19'.split(',')]
+QUESTIONS = list(TITLES.keys())
 TO_COMPARE = {major: [minor for minor in QUESTIONS if minor != major]
               for major in QUESTIONS}
 
@@ -86,7 +78,7 @@ class Qdata:
                                                     self.limitcol)])
 
         # minor_totals - a dict with key minor question # and value the
-        #                column totals for the minor question
+        # column totals for each of the answers of the minor question
         self.minor_totals = None  # will be populated for major question only
         self.total = 0  # valid responses
         self.base = 0  # all responses
@@ -245,7 +237,8 @@ def setvalue(worksheet, row, column, value, total):
         cell = worksheet.cell(row=row + 1, column=column, value=value / total)
         cell.style = 'Percent'
     else:
-        worksheet.cell(row=row + 1, column=column, value='-')
+        cell = worksheet.cell(row=row + 1, column=column, value='-')
+        cell.alignment = CENTER
 
 
 def one_minor(ws, major_qdata, minor_qnum, startcol):
@@ -281,8 +274,13 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
             setvalue(ws, row, col, minor_qdata.ans_count[minans], total)
     for row in range(3, row + 2):
         ws.cell(row=row, column=startcol).border = LEFT_BORDER
-    txt = f'{minor_qnum.upper()}: {minor_qdata.qtext.upper()}'
-    cell = ws.cell(row=3, column=startcol, value=txt)
+    if minor_qnum in TITLES:
+        txt = TITLES[minor_qnum]
+    else:
+        txt = minor_qdata.qtext
+    cell = ws.cell(row=MINOR_NUMBER_ROW, column=startcol, value=minor_qnum)
+    setbold(cell)
+    cell = ws.cell(row=MINOR_TITLE_ROW, column=startcol, value=txt.upper())
     setbold(cell)
     return minor_qdata
 
@@ -308,17 +306,17 @@ def one_sheet(major_qdata):
     :param major_qdata:
     :return: None. The workbook is updated.
     """
-    j = major_qdata
+    major_qdata = major_qdata
     ws = workbook.create_sheet(major_qdata.qnum)
-    title = f'{j.qnum.upper()}: {j.qtext.upper()}'
+    title = f'{major_qdata.qnum.upper()}: {major_qdata.qtext.upper()}'
     a1 = ws.cell(row=1, column=1, value=title)
     a2 = ws.cell(row=2, column=1, value='BASE: ALL RESPONDENTS')
-    a3 = ws.cell(row=5, column=1, value='BASE')
-    b3 = ws.cell(row=5, column=2, value=j.base)
-    b6 = ws.cell(row=6, column=2, value=1.0)  # 100%
-    ws.cell(row=7, column=1, value='VALID RESPONSES')
-    b7 = ws.cell(row=7, column=2, value=j.total)
-    b8 = ws.cell(row=8, column=2, value=j.total / j.base)
+    a3 = ws.cell(row=6, column=1, value='BASE')
+    b3 = ws.cell(row=6, column=2, value=major_qdata.base)
+    b6 = ws.cell(row=7, column=2, value=1.0)  # 100%
+    ws.cell(row=8, column=1, value='VALID RESPONSES')
+    b7 = ws.cell(row=8, column=2, value=major_qdata.total)
+    b8 = ws.cell(row=9, column=2, value=major_qdata.total / major_qdata.base)
     a1.font = Font(bold=True)
     a2.font = Font(bold=True)
     a3.font = Font(bold=True)
@@ -328,7 +326,7 @@ def one_sheet(major_qdata):
     b8.style = 'Percent'
     # Set the column width of the first column
     colw = 22
-    for q in j.ans_dict:
+    for q in major_qdata.ans_dict:
         w = len(q)
         if w > colw:
             colw = w
@@ -336,22 +334,15 @@ def one_sheet(major_qdata):
 
     # Insert the major answers and the response totals.
     rownum = MINOR_COUNT_START
-    for majans in j.ans_dict:  # iterate over the major answers
+    for majans in major_qdata.ans_dict:  # iterate over the major answers
         rownum += MINOR_COUNT_INCREMENT
         ws.cell(row=rownum, column=1, value=majans)
-        ans_total = j.ans_count[majans]
-        c = ws.cell(row=rownum, column=2, value=ans_total)
-        c.font = Font(bold=True)
-        if j.total:
-            c = ws.cell(row=rownum + 1, column=2, value=ans_total / j.total)
-            c.style = 'Percent'
-        else:
-            ws.cell(row=rownum + 1, column=2, value='-')
-
+        ans_total = major_qdata.ans_count[majans]
+        setvalue(ws, rownum, 2, ans_total, major_qdata.total)
     # Iterate over the minor questions, inserting the minor answers.
     coln = 3
-    for minor in j.minor_totals:
-        minor_qdata = one_minor(ws, j, minor, coln)
+    for minor in major_qdata.minor_totals:
+        minor_qdata = one_minor(ws, major_qdata, minor, coln)
         minorlen = minor_qdata.limitcol - minor_qdata.startcol
         coln += minorlen
 
