@@ -45,6 +45,7 @@ MINOR_COUNT_INCREMENT = 3
 
 LEFT_BORDER = Border(left=Side(border_style='thin'))
 CENTER = Alignment(horizontal='center')
+BOLD = Font(bold=True)
 
 QUESTIONS = list(TITLES.keys())
 TO_COMPARE = {major: [minor for minor in QUESTIONS if minor != major]
@@ -89,10 +90,10 @@ def trace(level, template, *args):
         print(template.format(*args))
 
 
-def validate_row(row, qdminor):
+def validate_minor(row, qdminor):
     """
-    Iterate over the possible minor answers and return zero if they exist.
-    :param row:
+    Iterate over the possible minor answers and return None if they exist.
+    :param row: the row from the CSV file.
     :param qdminor: the Qdata for the minor question that corresponds to the
                     current major question's current answer
     :return: None if an answer is found, otherwise the question number (Qnn).
@@ -101,12 +102,29 @@ def validate_row(row, qdminor):
 
     for anscol in range(qdminor.startcol, qdminor.limitcol):
         if row[anscol]:
-            error = 0
+            error = None
             break
     return error
 
 
-def oneanswer(row, qdminor):
+def validate_one_row(row, qdmajor):
+    error = qdmajor.qnum  # error is in major question
+    for anscol in range(qdmajor.startcol, qdmajor.limitcol):
+        if row[anscol]:
+            error = None  # found a major answer
+            anstext = answer_text_row[anscol]  # Male / Female
+            minordict = qdmajor.ans_dict[anstext]
+            # For each of the minor questions, if any have no answers,
+            # the row is invalid.
+            for minorqdata in minordict.values():
+                minorerror = validate_minor(row, minorqdata)
+                if minorerror:
+                    error = minorerror
+                    break
+    return error
+
+
+def one_minor_question(row, qdminor):
     """
     Iterate over the possible minor answers and increment the counter when
     they exist.
@@ -117,7 +135,8 @@ def oneanswer(row, qdminor):
     """
     for anscol in range(qdminor.startcol, qdminor.limitcol):
         if row[anscol]:
-            trace(2, 'oneanswer: minor: {}, col: {}', qdminor.qnum, anscol)
+            trace(2, 'one_minor_question: minor: {}, col: {}', qdminor.qnum,
+                  anscol)
             anstext = answer_text_row[anscol]  # minor answer
             qdminor.ans_count[anstext] += 1
 
@@ -125,7 +144,7 @@ def oneanswer(row, qdminor):
 def make_one_row(row, qdmajor):
     """
     Iterate over the possible major answers. If an answer is present then
-    iterate over its minor answers and increment each minor answer that is
+    iterate over its minor questions and increment each minor answer that is
     present.
 
     :param row:
@@ -133,20 +152,8 @@ def make_one_row(row, qdmajor):
     :return:
     """
     qdmajor.base += 1
-    error = qdmajor.qnum  # error is in major question
     # First check that there is at least one answer to each minor question
-    for anscol in range(qdmajor.startcol, qdmajor.limitcol):
-        if row[anscol]:
-            error = None  # found a major answer
-            anstext = answer_text_row[anscol]  # Male / Female
-            minordict = qdmajor.ans_dict[anstext]
-            # For each of the minor questions, if any have no answers,
-            # the row is invalid.
-            for minorqdata in minordict.values():
-                minorerror = validate_row(row, minorqdata)
-                if minorerror:
-                    error = minorerror
-                    break
+    error = validate_one_row(row, qdmajor) if _args.complete else False
     if error:
         trace(2, '*****skipping row {} respondent {}, no response to {}',
               qdmajor.base, row[0], error)
@@ -156,9 +163,11 @@ def make_one_row(row, qdmajor):
         trace(2, 'make_one_row: major: {}, col: {}', qdmajor.qnum, anscol)
         if row[anscol]:
             anstext = answer_text_row[anscol]  # Male / Female
+            qdmajor.ans_count[anstext] += 1
+            qdmajor.total += 1
             minordict = qdmajor.ans_dict[anstext]
             for minorqdata in minordict.values():
-                oneanswer(row, minorqdata)
+                one_minor_question(row, minorqdata)
 
 
 def make_major_qdata(major, infile):
@@ -207,10 +216,10 @@ def count_answers(major_qdata):
                 trace(2, r'ans: "{}" ({})', ans, minq.ans_count[ans])
                 minq.total += minq.ans_count[ans]
             trace(2, 'in count_answers, minq.total = {}', minq.total)
-            if totflag:
-                major_qdata.ans_count[majans] += minq.total
-                major_qdata.total += minq.total
-                totflag = False
+            # if totflag:
+            #     major_qdata.ans_count[majans] += minq.total
+            #     major_qdata.total += minq.total
+            #     totflag = False
     minq_tuple = TO_COMPARE[major_qdata.qnum]
     for minq in minq_tuple:
         globalmin = major_qdata.minor_totals[minq]
@@ -220,10 +229,6 @@ def count_answers(major_qdata):
             minqdata = minor_qdata_dict[minq]
             for minans in minqdata.ans_count:  # iterate over minor answers
                 globalmin[minans] += minqdata.ans_count[minans]
-
-
-def setbold(cell):
-    cell.font = Font(bold=True)
 
 
 def setvalue(worksheet, row, column, value, total):
@@ -279,9 +284,9 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
     else:
         txt = minor_qdata.qtext
     cell = ws.cell(row=MINOR_NUMBER_ROW, column=startcol, value=minor_qnum)
-    setbold(cell)
+    cell.font = BOLD
     cell = ws.cell(row=MINOR_TITLE_ROW, column=startcol, value=txt.upper())
-    setbold(cell)
+    cell.font = BOLD
     return minor_qdata
 
 
@@ -357,7 +362,6 @@ def main():
             # print('major_qdata:')
             # print(major_qdata)
             print("Major question:", major_qdata.qtext)
-            # print("Minor question:", minor_qdata_list)
             count_answers(major_qdata)
             one_sheet(major_qdata)
             print('Major Qdata total', major_qdata.total)
@@ -374,11 +378,9 @@ def getargs():
     parser.add_argument('outfile',
                         help='''output XLSX file.
         ''')
-    parser.add_argument('-j', '--major', help='''Not implemented yet.''')
-    parser.add_argument('-m', '--multiple', action='store_true', help='''
-    Specifies whether the minor question may have multiple (or no) answers. If
-    not specified, exactly one minor answer must be selected.''')
-    parser.add_argument('-n', '--minor', help='''Not implemented yet.''')
+    parser.add_argument('-c', '--complete', action='store_true', help='''
+                        If specified, require that each minor question has
+                        at least one answer otherwise the row is rejected.''')
     parser.add_argument('-s', '--skipcols', type=int, default=SKIPCOLS,
                         help=f'''Number of columns to ignore before extracting
                         the column numbers for defined questions. Default is
