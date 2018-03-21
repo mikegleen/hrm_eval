@@ -155,19 +155,24 @@ def make_one_row(row, qdmajor):
     # First check that there is at least one answer to each minor question
     error = validate_one_row(row, qdmajor) if _args.complete else False
     if error:
-        trace(2, '*****skipping row {} respondent {}, no response to {}',
+        trace(1, '*****skipping row {} respondent {}, no response to {}',
               qdmajor.base, row[0], error)
         return
 
+    found = False
     for anscol in range(qdmajor.startcol, qdmajor.limitcol):
         trace(2, 'make_one_row: major: {}, col: {}', qdmajor.qnum, anscol)
         if row[anscol]:
+            found = True
             anstext = answer_text_row[anscol]  # Male / Female
             qdmajor.ans_count[anstext] += 1
             qdmajor.total += 1
             minordict = qdmajor.ans_dict[anstext]
             for minorqdata in minordict.values():
                 one_minor_question(row, minorqdata)
+    if not found:
+        trace(1, '*****skipping row {} respondent {}, no response to {}',
+              qdmajor.base, row[0], qdmajor.qnum)
 
 
 def make_major_qdata(major, infile):
@@ -395,7 +400,6 @@ def getargs():
 if __name__ == '__main__':
     if sys.version_info.major < 3 or sys.version_info.minor < 6:
         raise ImportError('requires Python 3.6')
-    # q_dict, question_text_row, answer_text_row = None, None, None
     _args = getargs()
     main()
     print('End crosstabs3.')
