@@ -1,7 +1,6 @@
 import datetime
 import pandas as pd
 import pandas.io.excel as ex
-from PIL import Image
 import sys
 
 EXCEL_FILE = ('/Users/mlg/Downloads/hrm/surveymonkey/data_exports/cleaned/'
@@ -38,6 +37,7 @@ def main():
     ss = s[(s['diff'] < pd.Timedelta('02:24:00')) & (s['diff'] > pd.Timedelta('00:04:00'))]
     ss = ss[ss.collector != MANUAL_COLLECTOR]
     c = ss.groupby('r_diff').count()
+
 
 if __name__ == '__main__':
     if sys.version_info.major < 3:
