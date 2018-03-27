@@ -38,7 +38,7 @@ from config import CROSSTAB_TITLES as TITLES
 MINOR_NUMBER_ROW = 3
 MINOR_TITLE_ROW = 4
 MINOR_ANSWER_NAME_ROW = 5
-# Specify the row number where we initialize the loop that inserts row counts.
+# The row number where we initialize the loop that inserts row counts.
 # The row number is incremented before each row is inserted.
 MINOR_COUNT_START = 8
 MINOR_COUNT_INCREMENT = 3
@@ -67,9 +67,6 @@ class Qdata:
         # Qdata instances. Not used for the minor questions.
 
         # ans_count - dictionary mapping the answer text to the count
-        # For the major question, the sum of the answers to the first minor
-        # question. Since all of the minor questions have one and only one
-        # answer, the totals will all be identical.
 
         self.ans_dict = OrderedDict([(answer_text_row[n], 0)
                                      for n in range(self.startcol,
@@ -81,6 +78,12 @@ class Qdata:
         # minor_totals - a dict with key minor question # and value the
         # column totals for each of the answers of the minor question
         self.minor_totals = None  # will be populated for major question only
+
+        # value_totals - a dict with key minor question # and value the
+        # answer indices. For example, if the first question is given the
+        # value 1 and so on, then value_totals will contain the sum.  This is
+        # used to compute a (highly dubious) mean value for the minor question.
+        self.value_totals = None
         self.total = 0  # valid responses
         self.base = 0  # all responses
 
@@ -124,7 +127,7 @@ def validate_one_row(row, qdmajor):
     return error
 
 
-def one_minor_question(row, qdminor):
+def count_minor_question(row, qdminor):
     """
     Iterate over the possible minor answers and increment the counter when
     they exist.
@@ -135,13 +138,13 @@ def one_minor_question(row, qdminor):
     """
     for anscol in range(qdminor.startcol, qdminor.limitcol):
         if row[anscol]:
-            trace(2, 'one_minor_question: minor: {}, col: {}', qdminor.qnum,
+            trace(2, 'count_minor_question: minor: {}, col: {}', qdminor.qnum,
                   anscol)
             anstext = answer_text_row[anscol]  # minor answer
             qdminor.ans_count[anstext] += 1
 
 
-def make_one_row(row, qdmajor):
+def count_one_row(row, qdmajor):
     """
     Iterate over the possible major answers. If an answer is present then
     iterate over its minor questions and increment each minor answer that is
@@ -155,13 +158,13 @@ def make_one_row(row, qdmajor):
     # First check that there is at least one answer to each minor question
     error = validate_one_row(row, qdmajor) if _args.complete else False
     if error:
-        trace(1, '*****skipping row {} respondent {}, no response to {}',
+        trace(2, '*****skipping row {} respondent {}, no response to {}',
               qdmajor.base, row[0], error)
         return
 
     found = False
     for anscol in range(qdmajor.startcol, qdmajor.limitcol):
-        trace(2, 'make_one_row: major: {}, col: {}', qdmajor.qnum, anscol)
+        trace(2, 'count_one_row: major: {}, col: {}', qdmajor.qnum, anscol)
         if row[anscol]:
             found = True
             anstext = answer_text_row[anscol]  # Male / Female
@@ -169,9 +172,9 @@ def make_one_row(row, qdmajor):
             qdmajor.total += 1
             minordict = qdmajor.ans_dict[anstext]
             for minorqdata in minordict.values():
-                one_minor_question(row, minorqdata)
+                count_minor_question(row, minorqdata)
     if not found:
-        trace(1, '*****skipping row {} respondent {}, no response to {}',
+        trace(2, '*****skipping row {} respondent {}, no response to {}',
               qdmajor.base, row[0], qdmajor.qnum)
 
 
@@ -202,17 +205,18 @@ def make_major_qdata(major, infile):
     # by the minor questions and the inner dictionaries are each keyed by the
     # respective minor questions answers.
     qdmajor.minor_totals = {}
+    qdmajor.value_totals = {}
     for minor in minortuple:
         minorqd = Qdata(minor)
         qdmajor.minor_totals[minor] = {ans: 0 for ans in minorqd.ans_dict}
+        qdmajor.value_totals[minor] = {ans: 0 for ans in minorqd.ans_dict}
     for row in reader:
-        make_one_row(row, qdmajor)
+        count_one_row(row, qdmajor)
     return qdmajor
 
 
 def count_answers(major_qdata):
     for majans in major_qdata.ans_dict:
-        totflag = True  # only take totals for first minor question
         trace(2, 'in count_answers, majans = {}', majans)
         minor_qdata_dict = major_qdata.ans_dict[majans]
         for minq in minor_qdata_dict.values():
@@ -221,19 +225,21 @@ def count_answers(major_qdata):
                 trace(2, r'ans: "{}" ({})', ans, minq.ans_count[ans])
                 minq.total += minq.ans_count[ans]
             trace(2, 'in count_answers, minq.total = {}', minq.total)
-            # if totflag:
-            #     major_qdata.ans_count[majans] += minq.total
-            #     major_qdata.total += minq.total
-            #     totflag = False
+
     minq_tuple = TO_COMPARE[major_qdata.qnum]
     for minq in minq_tuple:
-        globalmin = major_qdata.minor_totals[minq]
+        # anstotal: For this major question and this minor question, anstotal
+        # is a dictionary where the key is the minor answer and the value is
+        # the sum of the minor answer counts.
+        anstotal = major_qdata.minor_totals[minq]
+        valuetotal = major_qdata.value_totals[minq]
         # accumulate minor answers across all major answers
-        for majans in major_qdata.ans_dict:  # iterate over major answers
+        for ix, majans in enumerate(major_qdata.ans_dict, start=1):
             minor_qdata_dict = major_qdata.ans_dict[majans]  # minor Qdata
             minqdata = minor_qdata_dict[minq]
             for minans in minqdata.ans_count:  # iterate over minor answers
-                globalmin[minans] += minqdata.ans_count[minans]
+                anstotal[minans] += minqdata.ans_count[minans]
+                valuetotal[minans] += minqdata.ans_count[minans] * ix
 
 
 def setvalue(worksheet, row, column, value, total):
@@ -246,13 +252,14 @@ def setvalue(worksheet, row, column, value, total):
     if total:
         cell = worksheet.cell(row=row + 1, column=column, value=value / total)
         cell.style = 'Percent'
-    else:
+    else:  # avoid divide by zero
         cell = worksheet.cell(row=row + 1, column=column, value='-')
         cell.alignment = CENTER
 
 
 def one_minor(ws, major_qdata, minor_qnum, startcol):
     """
+    Create the cells in this major question's worksheet for one minor question.
 
     :param ws: the current worksheet that we're creating
     :param major_qdata:
@@ -276,14 +283,19 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
         ws.column_dimensions[get_column_letter(col)].width = width
         row = MINOR_COUNT_START
         setvalue(ws, row, col, mincount, major_qdata.total)
-        total = major_qdata.minor_totals[minor_qnum][minans]
+        minortotal = major_qdata.minor_totals[minor_qnum][minans]
+        valuetotal = major_qdata.value_totals[minor_qnum][minans]
+        meanvalue = float(valuetotal) / float(minortotal)
         # Iterate over the major answers
         for majans, minor_qdata_dict in major_qdata.ans_dict.items():
             row += MINOR_COUNT_INCREMENT
             minor_qdata = minor_qdata_dict[minor_qnum]
-            setvalue(ws, row, col, minor_qdata.ans_count[minans], total)
-    for row in range(3, row + 2):
-        ws.cell(row=row, column=startcol).border = LEFT_BORDER
+            setvalue(ws, row, col, minor_qdata.ans_count[minans], minortotal)
+        cell = ws.cell(row=row + 3, column=col, value=meanvalue)
+        cell.number_format = '#0.00'
+        cell.font = Font(bold=True)
+    for r in range(3, row + 4):
+        ws.cell(row=r, column=startcol).border = LEFT_BORDER
     if minor_qnum in TITLES:
         txt = TITLES[minor_qnum]
     else:
@@ -321,19 +333,19 @@ def one_sheet(major_qdata):
     title = f'{major_qdata.qnum.upper()}: {major_qdata.qtext.upper()}'
     a1 = ws.cell(row=1, column=1, value=title)
     a2 = ws.cell(row=2, column=1, value='BASE: ALL RESPONDENTS')
-    a3 = ws.cell(row=6, column=1, value='BASE')
-    b3 = ws.cell(row=6, column=2, value=major_qdata.base)
-    b6 = ws.cell(row=7, column=2, value=1.0)  # 100%
+    a6 = ws.cell(row=6, column=1, value='BASE')
+    b6 = ws.cell(row=6, column=2, value=major_qdata.base)
+    b7 = ws.cell(row=7, column=2, value=1.0)  # 100%
     ws.cell(row=8, column=1, value='VALID RESPONSES')
-    b7 = ws.cell(row=8, column=2, value=major_qdata.total)
-    b8 = ws.cell(row=9, column=2, value=major_qdata.total / major_qdata.base)
-    a1.font = Font(bold=True)
-    a2.font = Font(bold=True)
-    a3.font = Font(bold=True)
-    b3.font = Font(bold=True)
-    b7.font = Font(bold=True)
-    b6.style = 'Percent'
-    b8.style = 'Percent'
+    b8 = ws.cell(row=8, column=2, value=major_qdata.total)
+    b9 = ws.cell(row=9, column=2, value=major_qdata.total / major_qdata.base)
+    a1.font = BOLD
+    a2.font = BOLD
+    a6.font = BOLD
+    b6.font = BOLD
+    b8.font = BOLD
+    b7.style = 'Percent'
+    b9.style = 'Percent'
     # Set the column width of the first column
     colw = 22
     for q in major_qdata.ans_dict:
@@ -349,6 +361,12 @@ def one_sheet(major_qdata):
         ws.cell(row=rownum, column=1, value=majans)
         ans_total = major_qdata.ans_count[majans]
         setvalue(ws, rownum, 2, ans_total, major_qdata.total)
+    ws.cell(row=rownum + 3, column=1, value='MEAN VALUE').font = BOLD
+    comment = ('The mean value must be used with caution. The values are'
+               ' arbitrarily assiged with the first answer in a column given a'
+               ' value of 1 and so on.')
+    ws.cell(row=rownum + 5, column=1, value=comment)
+
     # Iterate over the minor questions, inserting the minor answers.
     coln = 3
     for minor in major_qdata.minor_totals:
