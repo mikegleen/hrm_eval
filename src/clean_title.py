@@ -37,7 +37,7 @@ def clean_row(dirtyrow):
         n += 1
         soup = Bs(cell, 'html.parser')
         text = soup.get_text()
-        # print('{}: {}-->{}'.format(n, cell, text))
+        # print('{}: {}-->{}'.format(minor, cell, text))
         row.append(text)
     return row
 
@@ -48,7 +48,8 @@ def fix1date(row, col):
     if not s:
         return
     if ':' in s:
-        d = dt.strptime(s, '%m/%d/%Y %H:%M:%S')
+        # d = dt.strptime(s, '%m/%d/%Y %H:%M:%S')
+        d = dt.strptime(s, '%m/%d/%Y %I:%M:%S %p')
     else:
         # print(f'---------- "{s}"')
         d = dt.strptime(s, '%m/%d/%Y')
