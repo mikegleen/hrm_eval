@@ -43,8 +43,8 @@ CSVFILENAME="Heath Robinson Museum Visitor Survey.csv"
 
 expand_one () {
 RESPDIR=exports/$DATADIR/response
-CSVDIR=$RESPDIR/$EXPORTNAME/CSV
 CLEANDIR=exports/$DATADIR/cleaned
+CSVDIR=$RESPDIR/$EXPORTNAME/CSV
 echo Creating $RESPDIR
 mkdir -p $RESPDIR
 # Rename the unzipped directory to be just the date.
@@ -82,7 +82,7 @@ DATADIR=`python3 -c "print('$zipfile'.split('_',1)[0])"`
 DATADIR=`python3 -c "print('$DATADIR'.split('/')[1])"`
 # DATADIR = "yyyy-mm-dd"
 EXPORTNAME=`python3 -c "print('$zipfile'[:-4].split('_', 1)[1])"`
-# EXPORTNAME = "exportname"
+# EXPORTNAME = "152"
 echo $DATADIR $EXPORTNAME
 expand_one
 break
