@@ -56,7 +56,7 @@ def get_question_dict(qrow):
     qnlist.append(('qx', len(qrow)))  # append dummy entry
     trace(2, 'qnlist: {}', qnlist)
     qdict = OrderedDict()
-    for i, tup in enumerate(qnlist[:-1]):
+    for i, tup in enumerate(qnlist[:-1]):  # tup is (q1, index1)
         limit = qnlist[i + 1][1]  # next question's column
         qdict[tup[0]] = Qinfo(tup[1], limit - tup[1])
     return qdict
