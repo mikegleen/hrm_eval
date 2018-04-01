@@ -15,9 +15,10 @@ import os.path
 import sys
 
 import jsonutil
-from config import skiprows, defcol
+from config import SKIPROWS, defcol
 
 DBPATH = os.path.join('data', 'email_addrs')
+DEFAULT_OUTDIR = os.path.join('results', 'new_emails')
 WANT_NEWSLETTER_COL = defcol['want_newsletter']
 WANT_NOTIFY_COL = defcol['want_notify']
 VOLUNTEER_COL = defcol['volunteer']
@@ -69,16 +70,25 @@ def onerow(row, nrow, dbdict, new_newsletter_dict, new_volunteer_dict):
 def print_report(args, new_newsletter_dict, new_volunteer_dict):
     def prints(*data):
         print(*data)
-        # noinspection PyTypeChecker
-        print(*data, file=reportfile)
+        if not _args.dryrun:
+            # noinspection PyTypeChecker
+            print(*data, file=reportfile)
     filename = _starttime.strftime("emails_%Y%m%d-%H%M%S.txt")
+    csvfilename = _starttime.strftime("emails_%Y%m%d-%H%M%S.csv")
     reportpath = os.path.join(args.outdir, filename)
-    reportfile = open(reportpath, 'w')
+    csvpath = os.path.join(args.outdir, csvfilename)
+    print('Writing report to:', reportpath)
+    print('Writing csv file for MailChimp to:', csvpath)
+    if not _args.dryrun:
+        reportfile = open(reportpath, 'w')
+        csvfile = open(csvpath, 'w')
     prints('Wants newsletter:')
     if not len(new_newsletter_dict):
         prints('  ', 'none')
     for addr in sorted(new_newsletter_dict):
         prints('  ', addr)
+        if not _args.dryrun:
+            print(addr, file=csvfile)
     prints('Wants to volunteer:')
     if not len(new_volunteer_dict):
         prints('  ', 'none')
@@ -92,15 +102,15 @@ def main(args):
     # Use dictionaries instead of sets because json doesn't support sets
     new_newsletter_dict = {}
     new_volunteer_dict = {}
-    nrow = skiprows
+    nrow = SKIPROWS
     dbdict = jsonutil.load_json(DBPATH)
     if not dbdict:
         print('Initializing database.')
         dbdict = init_dbdict()
     with open(csvfilename, newline='') as csvfile:
         monkeyreader = csv.reader(csvfile)
-        nskip = skiprows
-        if skiprows > 0:  # can only validate if there is a heading
+        nskip = SKIPROWS
+        if SKIPROWS > 0:  # can only validate if there is a heading
             row = next(monkeyreader)
             if row[EMAIL_ADDR_COL].strip() != EMAIL_QUESTION:
                 raise ValueError('Validation check fails. Col {} of first row'
@@ -134,15 +144,14 @@ def getargs():
     parser.add_argument('infile', help='''
     The CSV file that has been cleaned by remove_nuls.py, merge_csv.py, and
     clean_title.py''')
-    parser.add_argument('-o', '--outdir', help='''Directory to contain the
+    parser.add_argument('-o', '--outdir', default=DEFAULT_OUTDIR,
+                        help='''Directory to contain the
         output report file. If omitted, the default is the directory
         "results/new_emails" in the same directory that the input file resides.
         ''')
     parser.add_argument('-y', '--dryrun', action='store_true', help='''
     If specified, do not update the database.''')
     args = parser.parse_args()
-    if not args.outdir:
-        args.outdir = os.path.join('results', 'new_emails')
     return args
 
 
