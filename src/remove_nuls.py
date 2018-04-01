@@ -20,7 +20,7 @@ def main():
             cleanline = byteline.replace(b'\x00', b'')
             # if cleanline != byteline:
             #     print('Removed nuls from line {}: len {}-> len {}'
-            #           .format(n, len(byteline), len(cleanline)))
+            #           .format(minor, len(byteline), len(cleanline)))
             outfile.write(cleanline)
             byteline = infile.readline()
 
