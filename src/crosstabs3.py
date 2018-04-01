@@ -47,7 +47,8 @@ LEFT_BORDER = Border(left=Side(border_style='thin'))
 CENTER = Alignment(horizontal='center')
 BOLD = Font(bold=True)
 
-QUESTIONS = list(TITLES.keys())
+QUESTIONS9 = ['Q' + str(n) for n in range(901, 917)]
+QUESTIONS = list(TITLES.keys()) + QUESTIONS9
 TO_COMPARE = {major: [minor for minor in QUESTIONS if minor != major]
               for major in QUESTIONS}
 
@@ -57,8 +58,15 @@ class Qdata:
     def __init__(self, qnum):
         self.qnum = qnum
         self.startcol = q_dict[qnum]
+        trace(1, 'qnum {}, startcol: {}', qnum, self.startcol)
         # For example, if our question is q13, limitcol is q14's column number.
-        self.limitcol = q_dict['Q' + str(int(qnum[1:]) + 1)]
+        # An exception to this rule is when a question has been split, in
+        # which case, for example, q9 is replaced by q901..q916. So we have
+        # to use a more roundabout method to get the "next" question's columm.
+        qlist = list(q_dict)
+        qix = qlist[qlist.index(qnum) + 1]
+        self.limitcol = q_dict[qix]
+        trace(1, '  qix: {}, limitcol: {}', qix, self.limitcol)
         # qtext - the text name of the question, from row 2
         self.qtext = question_text_row[self.startcol]
 
@@ -190,6 +198,7 @@ def make_major_qdata(major, infile):
     reader = csv.reader(infile)
     question_row = next(reader)  # has values like q1,,,,q2,,,q3,,etc.
     # Create a dict mapping Q<minor> -> column index
+    question_row.append('qx')  # dummy column at end
     q_dict = num_dict(question_row, _args.skipcols)
     question_text_row = next(reader)
     answer_text_row = next(reader)
@@ -285,14 +294,22 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
         setvalue(ws, row, col, mincount, major_qdata.total)
         minortotal = major_qdata.minor_totals[minor_qnum][minans]
         valuetotal = major_qdata.value_totals[minor_qnum][minans]
-        meanvalue = float(valuetotal) / float(minortotal)
+        try:
+            meanvalue = float(valuetotal) / float(minortotal)
+        except ZeroDivisionError:
+            meanvalue = None
         # Iterate over the major answers
+        row += 1
         for majans, minor_qdata_dict in major_qdata.ans_dict.items():
             row += MINOR_COUNT_INCREMENT
             minor_qdata = minor_qdata_dict[minor_qnum]
             setvalue(ws, row, col, minor_qdata.ans_count[minans], minortotal)
-        cell = ws.cell(row=row + 3, column=col, value=meanvalue)
-        cell.number_format = '#0.00'
+        if meanvalue is None:
+            cell = ws.cell(row=row + 3, column=col, value='-')
+            cell.alignment = CENTER
+        else:
+            cell = ws.cell(row=row + 3, column=col, value=meanvalue)
+            cell.number_format = '#0.00'
         cell.font = Font(bold=True)
     for r in range(3, row + 4):
         ws.cell(row=r, column=startcol).border = LEFT_BORDER
@@ -355,17 +372,19 @@ def one_sheet(major_qdata):
     ws.column_dimensions['A'].width = colw * 1.10
 
     # Insert the major answers and the response totals.
-    rownum = MINOR_COUNT_START
+    rownum = MINOR_COUNT_START + 1
+    index = 0
     for majans in major_qdata.ans_dict:  # iterate over the major answers
         rownum += MINOR_COUNT_INCREMENT
-        ws.cell(row=rownum, column=1, value=majans)
+        index += 1
+        ws.cell(row=rownum, column=1, value=f'({index}) ' + majans)
         ans_total = major_qdata.ans_count[majans]
         setvalue(ws, rownum, 2, ans_total, major_qdata.total)
     ws.cell(row=rownum + 3, column=1, value='MEAN VALUE').font = BOLD
     comment = ('The mean value must be used with caution. The values are'
                ' arbitrarily assiged with the first answer in a column given a'
                ' value of 1 and so on.')
-    ws.cell(row=rownum + 5, column=1, value=comment)
+    ws.cell(row=rownum + 5, column=3, value=comment)
 
     # Iterate over the minor questions, inserting the minor answers.
     coln = 3
@@ -373,6 +392,7 @@ def one_sheet(major_qdata):
         minor_qdata = one_minor(ws, major_qdata, minor, coln)
         minorlen = minor_qdata.limitcol - minor_qdata.startcol
         coln += minorlen
+    ws.freeze_panes = 'C6'
 
 
 def main():
