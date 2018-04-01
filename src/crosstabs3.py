@@ -46,6 +46,9 @@ MINOR_COUNT_INCREMENT = 3
 LEFT_BORDER = Border(left=Side(border_style='thin'))
 CENTER = Alignment(horizontal='center')
 BOLD = Font(bold=True)
+WRAP = Alignment(wrapText=True)
+MIN_COL_WIDTH = 6.0
+MAX_COL_WIDTH = 20.
 
 QUESTIONS9 = ['Q' + str(n) for n in range(901, 917)]
 QUESTIONS = list(TITLES.keys()) + QUESTIONS9
@@ -286,9 +289,11 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
     # Iterate over the answers for this minor question.
     for minans, mincount in major_qdata.minor_totals[minor_qnum].items():
         col += 1
-        ws.cell(row=MINOR_ANSWER_NAME_ROW, column=col, value=minans)
+        cell = ws.cell(row=MINOR_ANSWER_NAME_ROW, column=col, value=minans)
+        cell.alignment = Alignment(wrapText=True)
         width = len(minans) * 1.10
-        width = 6. if width < 6. else width
+        width = MIN_COL_WIDTH if width < MIN_COL_WIDTH else width
+        width = MAX_COL_WIDTH if width > MAX_COL_WIDTH else width
         ws.column_dimensions[get_column_letter(col)].width = width
         row = MINOR_COUNT_START
         setvalue(ws, row, col, mincount, major_qdata.total)
