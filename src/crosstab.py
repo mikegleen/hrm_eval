@@ -9,7 +9,7 @@ Input is a CSV file produced by SurveyMonkey. The creation method is:
 6. In "Data View", select "Original View".
 7. In "Columns", select "Expanded".
 8. In "Cells", select "Actual Answer Text".
-9. Rename the file in the format yyyy-mm-dd_n.zip where n is the last survey in
+9. Rename the file in the format yyyy-mm-dd_n.zip where minor is the last survey in
    the export.
 
 """
@@ -25,8 +25,8 @@ from openpyxl.utils import get_column_letter
 
 from assign_nums import num_dict
 
-TO_COMPARE = {'q13':  # gender
-              'q15'  # likely to recommend
+TO_COMPARE = {'q13':  # likely to recommend
+              'q16'   # age
               }
 # qtext - the text name of the question, from row 2
 # ans_dict - dictionary mapping the answer text to the count
@@ -36,15 +36,15 @@ class Qdata:
 
     def __init__(self, qnum):
         self.qnum = qnum
-        self.startcol = question_dict[qnum]
+        self.startcol = q_dict[qnum]
         # For example, if our question is q13, limitcol is q14's column number.
-        self.limitcol = question_dict['q' + str(int(qnum[1:]) + 1)]
+        self.limitcol = q_dict['q' + str(int(qnum[1:]) + 1)]
         self.qtext = question_text_row[self.startcol]
-        '''
-        For the major question, the values of the ans_dict are minor question
-        Qdata instances. For the minor questions, the values are integers
-        containing the counts of occurences.
-        '''
+
+        # For the major question, the values of the ans_dict are minor question
+        # Qdata instances. For the minor questions, the values are integers
+        # containing the counts of occurences.
+
         self.ans_dict = OrderedDict([(answer_text_row[n], 0)
                                     for n in range(self.startcol,
                                                    self.limitcol)])
@@ -62,13 +62,14 @@ def oneans(row, qdminor):
     Iterate over the possible minor answers and increment the counter when
     they exist.
     :param row:
-    :param qdminor: the Qdata for the minor question
+    :param qdminor: the Qdata for the minor question that corresponds to the
+                    current major question's current answer
     :return: 0 if at least 1 answer is found, 2 if no answers are found
     """
     error = 2  # 2 => error is in minor question
     for anscol in range(qdminor.startcol, qdminor.limitcol):
         if row[anscol]:
-            anstext = row[anscol]  # minor answer
+            anstext = answer_text_row[anscol]  # minor answer
             qdminor.ans_dict[anstext] += 1
             error = 0
             if not _args.multiple:
@@ -91,7 +92,7 @@ def onerow(row, qdmajor, qdminor):
     error = 1  # 1 => error is in major question
     for anscol in range(qdmajor.startcol, qdmajor.limitcol):
         if row[anscol]:
-            anstext = row[anscol]  # Male / Female
+            anstext = answer_text_row[anscol]  # Male / Female
             error = oneans(row, qdmajor.ans_dict[anstext])
             break
     if error and _args.verbose > 1:
@@ -110,10 +111,10 @@ def make_major_qdata(major, infile):
     Qdata which contains the minor question and answers and is more convenient
     to use than digging the minor info out of the major structure.
     """
-    global question_dict, question_text_row, answer_text_row
+    global q_dict, question_text_row, answer_text_row
     reader = csv.reader(infile)
     question_row = next(reader)  # has values like q1,,,,q2,,,q3,,etc.
-    question_dict = num_dict(question_row)  # dict mapping q<n> -> column index
+    q_dict = num_dict(question_row)  # dict mapping q<minor> -> column index
     question_text_row = next(reader)
     answer_text_row = next(reader)
     minor = TO_COMPARE[major]
@@ -250,7 +251,7 @@ def getargs():
     Specifies whether the minor question may have multiple (or no) answers. If
     not specified, exactly one minor answer must be selected.''')
     parser.add_argument('-j', '--major', help='''Not implemented yet.''')
-    parser.add_argument('-n', '--minor', help='''Not implemented yet.''')
+    parser.add_argument('-minor', '--minor', help='''Not implemented yet.''')
     args = parser.parse_args()
     return args
 
@@ -258,7 +259,7 @@ def getargs():
 if __name__ == '__main__':
     if sys.version_info.major < 3 or sys.version_info.minor < 6:
         raise ImportError('requires Python 3.6')
-    question_dict, question_text_row, answer_text_row = None, None, None
+    q_dict, question_text_row, answer_text_row = None, None, None
     _args = getargs()
     main()
 
