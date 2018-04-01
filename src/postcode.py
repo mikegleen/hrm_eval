@@ -27,7 +27,7 @@ import jsonutil
 
 WHR_LOCATION = (51.5920, -.3870)  # lat, lng
 POSTCODE_COL = config.defcol['postcode']
-URL = 'http://maps.googleapis.com/maps/api/geocode/json'
+URL = 'https://maps.googleapis.com/maps/api/geocode/json'
 # replace PcData with simple list because we now need to update the count.
 # PcData = namedtuple('PcData', 'distance address count'.split())
 PATCHES = {'W5': 'W5,LONDON',
