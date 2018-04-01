@@ -32,25 +32,25 @@ from config import SKIPCOLS
 Aggmap = namedtuple('Aggmap', ('newcol', 'oldcols'))
 Qinfo = namedtuple('Qinfo', ('ix', 'len'))
 AGGLIST = [
-    (10, [Aggmap('Not very', ('- very unsatisfied', '- 2', '- 3', '- 4',
+    ('q10', [Aggmap('Not very', ('- very unsatisfied', '- 2', '- 3', '- 4',
                               '- 5')),
           Aggmap('Quite', ('- satisfied', '- 7', '- 8')),
           Aggmap('Very', ('- 9', '- extremely satisfied'))
           ]),
-    (13, [Aggmap('Not very', ('Very unlikely', 'Unlikely',
+    ('q13', [Aggmap('Not very', ('Very unlikely', 'Unlikely',
                               'Neither likely nor unlikely')),
           Aggmap('Likely', ('Likely', 'Very likely'))
           ]),
-    (15, [Aggmap('Female', ('Female',)),
+    ('q15', [Aggmap('Female', ('Female',)),
           Aggmap('Male', ('Male',))
           ]),
-    (16, [Aggmap('Under 55', ('Under 16', '16 - 34', '35 - 54')),
+    ('q16', [Aggmap('Under 55', ('Under 16', '16 - 34', '35 - 54')),
           Aggmap('55 or over', ('55 - 64', '65 or over'))
           ]),
-    (17, [Aggmap('Not disabled', ('No',)),
+    ('q17', [Aggmap('Not disabled', ('No',)),
           Aggmap('Disabled', ('Yes, limited a little', 'Yes, limited a lot')),
           ]),
-    (18, [Aggmap('White British',
+    ('q18', [Aggmap('White British',
                  ('White - British (English/Scottish/Welsh/Northern Irish)',)),
           Aggmap('Other', ('White - Irish', 'other White', 'Indian',
                            'Pakistani', 'Bangladeshi', 'Chinese',
@@ -60,13 +60,17 @@ AGGLIST = [
                            'Arab', 'Mixed / Multiple ethnic group(s)',
                            'other ethnicity'))
           ]),
-    (19, [Aggmap('Harrow', ('Harrow borough',)),
+    ('q19', [Aggmap('Harrow', ('Harrow borough',)),
           Aggmap('Other London', ('other London borough',)),
           Aggmap('Elsewhere', ('elsewhere in UK', 'Not in UK')),
           ]),
 ]
-
-AGGDICT = OrderedDict(AGGLIST)
+# All of the mappings for the sub-questions of question 9 are identical.
+AGGMAP9 = [Aggmap('not good', ('Very Poor', 'Poor', 'Neither Good nor Poor')),
+           Aggmap('good', ('Good', 'Very Good'))
+           ]
+AGGLIST9 = [('q' + str(qn), AGGMAP9) for qn in range(901, 917)]
+AGGDICT = OrderedDict(AGGLIST + AGGLIST9)
 
 
 def trace(level, template, *arglist):
@@ -82,31 +86,15 @@ def get_question_dict(qrow):
             (offset, length) where length is the number of answers to each
             question
     """
-    # qrow[i][1:] maps 'q21' -> '21'
-    # qnlist is [(1, index1), (2, index2), ...]
-    qnlist = [(int(qrow[i][1:]), i) for i in range(SKIPCOLS, len(qrow))
+    # qnlist is [('q1', index1), ('q2', index2), ...]
+    qnlist = [(qrow[i], i) for i in range(SKIPCOLS, len(qrow))
               if qrow[i]]
+    qnlist.append(('qx', len(qrow)))  # append dummy entry
     trace(2, 'qnlist: {}', qnlist)
-    # qndict maps question number to zero-based column index
-    qndict = OrderedDict(qnlist)
-    lastq = list(qndict.keys())[-1]  # the last question number
-    qndict[lastq + 1] = len(qrow)  # insert dummy question at end
-    trace(2, 'qndict: {}', qndict)
-    lir = list(enumerate(qndict.items()))
-    # lir = [(0, (1, IX1)), (1, (2, IX2)), ... , (n, (n+1, IXn)]
-    # where IXn is the n-th question's index in the row
-    # print(lir)
     qdict = OrderedDict()
-    for i, qix in lir[:-1]:  # iterate over all but the dummy last entry
-        # qix is a tuple of (question number starting with 1,
-        #     index in row starting with zero)
-        # print(i, qix)
-        # lir[i] == (i, (qn, ix))  qn: question #, ix: row index
-        # lir[i][1] == (qn, ix)
-        # lir[i][1][1] = ix
-        # print(f'len = {lir[i + 1][1][1] - qix[1]}')
-        anslen = lir[i + 1][1][1] - qix[1]
-        qdict[qix[0]] = Qinfo(ix=qix[1], len=anslen)
+    for i, tup in enumerate(qnlist[:-1]):  # tup is (q1, index1)
+        limit = qnlist[i + 1][1]  # next question's column
+        qdict[tup[0]] = Qinfo(tup[1], limit - tup[1])
     return qdict
 
 
@@ -116,13 +104,13 @@ def inv_aggdict():
     keys are the original column names and the values are the aggregate column
     names. For example, assuming we have only question 16 where AGGLIST has:
 
-        (16, [Aggmap('Under 55', ('Under 16', '16 - 34', '35 - 54')),
+        ('q16', [Aggmap('Under 55', ('Under 16', '16 - 34', '35 - 54')),
               Aggmap('55 or over', ('55 - 64', '65 or over'))
               ]),
 
     INV_AGGDICT will be:
 
-    {16: {
+    {'q16': {
             'Under 16': 'Under 55',
             '16 - 34': 'Under 55',
             '35 - 54': 'Under 55',
@@ -134,7 +122,8 @@ def inv_aggdict():
     """
     invdict = OrderedDict()
     for q in AGGDICT:
-        anslist = AGGDICT[q]  # the list of Aggmap namedtuples for this question
+        # anslist is the list of Aggmap namedtuples for this question
+        anslist = AGGDICT[q]
         invmap = OrderedDict()
         for amap in anslist:
             for origcol in amap.oldcols:
@@ -150,7 +139,7 @@ def get_question_row(qrow, qdict):
     For each question, insert the question text followed by a number of empty
     columns. The number to insert is one less than either the number of answers
     in the input row or the number of aggregated answers.
-    :param qrow: The list as read from the CSV file
+    :param qrow: Row 1 or 2 as read from the CSV file
     :param qdict: The dictionary built by get_question_dict.
     :return: The list with the new aggregated columns
     """
@@ -160,9 +149,9 @@ def get_question_row(qrow, qdict):
     # If the question is to be aggregated, append the new columns to nqr and
     # skip to the next question. Otherwise, append the old columns.
 
-    for question, qinf in qdict.items():
-        ix = qinf.ix
-        length = qinf.len
+    for question, qinfo in qdict.items():
+        ix = qinfo.ix
+        length = qinfo.len
         trace(2, 'question {} len {}', question, length)
         if question in AGGDICT:
             length = len(AGGDICT[question])
@@ -196,16 +185,17 @@ def new_ans_map(ansrow, qdict):
         agdict = AGGDICT[question]  # agg ans -> orig answers
         for am in agdict:  # qi is an Aggmap namedtuple
             newarow.append(am.newcol)
-        # Build a dict of original column offset -> agg column name
+        # Build a dict of original column offset -> agg column name. amap will
+        # only have entries for answers to questions being aggregated.
         for coln in range(ix, ix + length):
             old_ans = ansrow[coln].strip()
             try:
                 amap[coln] = oamap[old_ans]
             except KeyError:
                 continue  # we will be ignoring this column
-        trace(2, 'after question {} answers(len={}) {}', question, len(amap),
+        trace(3, 'after question {} answers(len={}) {}', question, len(amap),
               amap)
-    trace(1, 'answer map: {}', amap)
+    trace(2, 'answer map: {}', amap)
     return amap, newarow
 
 
@@ -231,6 +221,8 @@ def new_data_row(row, qdict, namap):
             try:
                 newans = namap[coln]
             except KeyError:
+                # This column in the original file is being dropped - it does
+                # not have an entry in this question's Aggmap.
                 continue  # skip this column
             if row[coln]:
                 # Insert the original answer, not the aggregated answer. So, if
