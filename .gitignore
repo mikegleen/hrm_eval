@@ -8,3 +8,7 @@ misc
 results
 exports
 *.ipynb
+.idea/
+.ipynb_checkpoints/
+ipynb/
+temp/
