@@ -22,7 +22,7 @@ import csv
 import datetime
 import os.path
 import sys
-from config import skiprows
+from config import SKIPROWS
 
 
 def getgroupsize(row, q5col):
@@ -65,17 +65,17 @@ def findcol(value, row):
 
 def main():
     parties = defaultdict(int)
-    nrow = skiprows
+    nrow = SKIPROWS
     notsure = 0
     q3q5conflict = 0
-    if skiprows <= 0:
+    if SKIPROWS <= 0:
         raise ValueError('The heading must exist to find Q5 column.')
     with open(_args.infile, newline='', encoding='utf-8-sig') as csvfile:
         monkeyreader = csv.reader(csvfile)
         row = next(monkeyreader)
         q3col = findcol('q3', row)
         q5col = findcol('q5', row)
-        for n in range(skiprows - 1):
+        for n in range(SKIPROWS - 1):
             next(monkeyreader)
         for row in monkeyreader:
             nrow += 1
