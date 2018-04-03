@@ -51,9 +51,10 @@ MIN_COL_WIDTH = 6.0
 MAX_COL_WIDTH = 20.
 
 QUESTIONS9 = ['Q' + str(n) for n in range(901, 917)]
-QUESTIONS = list(TITLES.keys()) + QUESTIONS9
-TO_COMPARE = {major: [minor for minor in QUESTIONS if minor != major]
-              for major in QUESTIONS}
+MAJOR_QUESTIONS = list(TITLES.keys()) + QUESTIONS9 + ['Q7', 'Q14']
+MINOR_QUESTIONS = list(TITLES.keys())
+TO_COMPARE = {major: [minor for minor in MINOR_QUESTIONS if minor != major]
+              for major in MAJOR_QUESTIONS}
 
 
 class Qdata:
@@ -61,7 +62,7 @@ class Qdata:
     def __init__(self, qnum):
         self.qnum = qnum
         self.startcol = q_dict[qnum]
-        trace(1, 'qnum {}, startcol: {}', qnum, self.startcol)
+        trace(3, 'qnum {}, startcol: {}', qnum, self.startcol)
         # For example, if our question is q13, limitcol is q14's column number.
         # An exception to this rule is when a question has been split, in
         # which case, for example, q9 is replaced by q901..q916. So we have
@@ -69,7 +70,7 @@ class Qdata:
         qlist = list(q_dict)
         qix = qlist[qlist.index(qnum) + 1]
         self.limitcol = q_dict[qix]
-        trace(1, '  qix: {}, limitcol: {}', qix, self.limitcol)
+        trace(3, '  qix: {}, limitcol: {}', qix, self.limitcol)
         # qtext - the text name of the question, from row 2
         self.qtext = question_text_row[self.startcol]
 
@@ -404,7 +405,7 @@ def main():
     global workbook
     workbook = Workbook()
     del workbook[workbook.sheetnames[0]]  # remove the default sheet
-    for question in TO_COMPARE:
+    for question in MAJOR_QUESTIONS:
         with codecs.open(sys.argv[1], 'r', 'utf-8-sig') as infile:
             major_qdata = make_major_qdata(question, infile)
             # print('major_qdata:')
