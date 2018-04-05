@@ -25,8 +25,10 @@ DEFCOL = {
 defcol = {dc: col2num(DEFCOL[dc]) for dc in DEFCOL}
 
 CROSSTAB_TITLES = {'Q3': 'Visiting w. others',
+                   # 'Q7': 'How found out',
                    'Q10': 'Satisfaction',
-                   'Q13': 'Likely recommend',
+                   'Q13': 'Visit again',
+                   # 'Q14': 'Likely recommend',
                    'Q15': 'Gender',
                    'Q16': 'Age',
                    'Q17': 'Disabled?',
