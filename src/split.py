@@ -87,7 +87,7 @@ def split_question(q, r1, r2, r3, qdict):
         if newq != oldq:
             oldq = newq
             subqnum += 1
-            r1[col] = q + f'{subqnum:02}'
+            r1[col] = f'q{q[1:]}.{subqnum:02}'
             r2[col] = newq
     return None
 
