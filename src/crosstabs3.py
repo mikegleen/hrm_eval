@@ -399,8 +399,12 @@ def one_sheet(major_qdata):
         minorlen = minor_qdata.limitcol - minor_qdata.startcol
         coln += minorlen
     ws.freeze_panes = 'C6'
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
+    ws.page_setup.fitToHeight = False
+    ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
 
-
+    
 def main():
     global workbook
     workbook = Workbook()
