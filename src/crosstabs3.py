@@ -32,6 +32,7 @@ from openpyxl.utils import get_column_letter
 from assign_nums import num_dict
 from config import SKIPCOLS
 from config import CROSSTAB_TITLES as TITLES
+from config import MAJOR_QUESTIONS, MINOR_QUESTIONS
 #
 # Constants for sheet creation:
 # The row to insert minor titles and answer names
@@ -50,13 +51,8 @@ WRAP = Alignment(wrapText=True)
 MIN_COL_WIDTH = 6.0
 MAX_COL_WIDTH = 14.0
 
-
-QUESTIONS9 = [f'Q{n / 100:.02f}' for n in range(901, 917)]  # Q9.01, Q9.02, ...
-MAJOR_QUESTIONS = list(TITLES.keys()) + QUESTIONS9 + [f'Q{i}' for i in
-                                                      (2, 4, 6, 7, 8, 14)]
-MAJOR_QUESTIONS = sorted(MAJOR_QUESTIONS, key=lambda k: float(k[1:]))
-# print(MAJOR_QUESTIONS)
-MINOR_QUESTIONS = list(TITLES)
+# TO_COMPARE: A dict for each major question the value is a list of minor
+# questions excluding the current major question.
 TO_COMPARE = {major: [minor for minor in MINOR_QUESTIONS if minor != major]
               for major in MAJOR_QUESTIONS}
 

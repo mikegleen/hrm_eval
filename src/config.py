@@ -24,6 +24,7 @@ DEFCOL = {
 }
 defcol = {dc: col2num(DEFCOL[dc]) for dc in DEFCOL}
 
+# begin crosstab definitions
 CROSSTAB_TITLES = {'Q3': 'Visiting w. others',
                    # 'Q7': 'How found out',
                    'Q10': 'Satisfaction',
@@ -34,3 +35,9 @@ CROSSTAB_TITLES = {'Q3': 'Visiting w. others',
                    'Q17': 'Disabled?',
                    'Q18': 'Ethnicity',
                    'Q19': 'Where live UK'}
+QUESTIONS9 = [f'Q{n / 100:.02f}' for n in range(901, 917)]  # Q9.01, Q9.02, ...
+MAJOR_QUESTIONS = list(CROSSTAB_TITLES.keys()) + QUESTIONS9 + [f'Q{i}' for i in
+                                                      (2, 4, 6, 7, 8, 14)]
+MAJOR_QUESTIONS = sorted(MAJOR_QUESTIONS, key=lambda k: float(k[1:]))
+MINOR_QUESTIONS = list(CROSSTAB_TITLES)
+# end crosstab definitions
