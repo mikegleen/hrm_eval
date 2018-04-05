@@ -16,7 +16,7 @@ END
 # echo $INCSV
 BASENAME=`python3 -c "print('$INCSV'.split('.')[0])"`
 # echo $BASENAME
-OUTPATH="$OUTPUTDIR/c${BASENAME}.xlsx"
+OUTPATH="$OUTPUTDIR/crosstab_${BASENAME}.xlsx"
 echo Creating: $OUTPATH
 mkdir -p $OUTPUTDIR
 [ -e "temp" ] || mkdir temp
