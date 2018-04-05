@@ -69,7 +69,7 @@ AGGLIST = [
 AGGMAP9 = [Aggmap('not good', ('Very Poor', 'Poor', 'Neither Good nor Poor')),
            Aggmap('good', ('Good', 'Very Good'))
            ]
-AGGLIST9 = [('q' + str(qn), AGGMAP9) for qn in range(901, 917)]
+AGGLIST9 = [(f'q{qn / 100:.02f}', AGGMAP9) for qn in range(901, 917)]
 AGGDICT = OrderedDict(AGGLIST + AGGLIST9)
 
 
