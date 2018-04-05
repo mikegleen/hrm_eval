@@ -48,11 +48,15 @@ CENTER = Alignment(horizontal='center')
 BOLD = Font(bold=True)
 WRAP = Alignment(wrapText=True)
 MIN_COL_WIDTH = 6.0
-MAX_COL_WIDTH = 20.
+MAX_COL_WIDTH = 14.0
 
-QUESTIONS9 = ['Q' + str(n) for n in range(901, 917)]
-MAJOR_QUESTIONS = list(TITLES.keys()) + QUESTIONS9 + ['Q7', 'Q14']
-MINOR_QUESTIONS = list(TITLES.keys())
+
+QUESTIONS9 = [f'Q{n / 100:.02f}' for n in range(901, 917)]  # Q9.01, Q9.02, ...
+MAJOR_QUESTIONS = list(TITLES.keys()) + QUESTIONS9 + [f'Q{i}' for i in
+                                                      (2, 4, 6, 7, 8, 14)]
+MAJOR_QUESTIONS = sorted(MAJOR_QUESTIONS, key=lambda k: float(k[1:]))
+# print(MAJOR_QUESTIONS)
+MINOR_QUESTIONS = list(TITLES)
 TO_COMPARE = {major: [minor for minor in MINOR_QUESTIONS if minor != major]
               for major in MAJOR_QUESTIONS}
 
@@ -65,8 +69,8 @@ class Qdata:
         trace(3, 'qnum {}, startcol: {}', qnum, self.startcol)
         # For example, if our question is q13, limitcol is q14's column number.
         # An exception to this rule is when a question has been split, in
-        # which case, for example, q9 is replaced by q901..q916. So we have
-        # to use a more roundabout method to get the "next" question's columm.
+        # which case, for example, q9 is replaced by q9.01..q9.16. So we have
+        # to use a roundabout method to get the "next" question's columm.
         qlist = list(q_dict)
         qix = qlist[qlist.index(qnum) + 1]
         self.limitcol = q_dict[qix]
@@ -375,7 +379,7 @@ def one_sheet(major_qdata):
         w = len(q)
         if w > colw:
             colw = w
-    ws.column_dimensions['A'].width = colw * 1.10
+    ws.column_dimensions['A'].width = colw  # * 1.10
 
     # Insert the major answers and the response totals.
     rownum = MINOR_COUNT_START + 1
