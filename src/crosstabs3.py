@@ -404,7 +404,7 @@ def one_sheet(major_qdata):
     ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
     ws.page_setup.paperSize = ws.PAPERSIZE_A4
 
-    
+
 def main():
     global workbook
     workbook = Workbook()
