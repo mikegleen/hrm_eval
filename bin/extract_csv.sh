@@ -9,22 +9,32 @@
 # This script will search the "exports" directory for zip files and process
 # the first one found.
 #
+# Output:
+# -------
+#
+# The updated JSON file is saved in directory data/email_addrs. The oldest
+# JSON file is deleted and the latest 10 are saved.
+#
+# Reports are written to directory results/new_emails.
+#
 # Usage:
+# ------
+#
 # Download the zip file to the 'exports' directory:
 # Log on to www.surveymonkey.com.
 # Select "My Surveys" on the top menu.
 # Select Heath Robinson Museum Visitor Survey / Analyze.
-# Click Export All / All responses data.
+# Click SAVE AS / Export file / Export All / All responses data.
 # On the popup "Export Survey Data" select:
 # File format: XLS
 # Data view:   Original View
 # Columns:     Expanded
 # Cells:       Actual Answer Text
-#
-# The zip file name must be of the format <datadir>_<lastnum>.zip.
+# File:        The zip file name must be of the format <datadir>_<lastnum>.zip.
 # The <datadir> field should be in the format yyyy-mm-dd.
 # The <lastnum> field should be the number of the last survey in the export.
 #
+# Download the file to hrm/evaluation/exports. 
 # This script will unzip the file to exports/<datadir>/response/<exportname>/
 # and then create the cleaned CSV file.
 #
@@ -39,7 +49,6 @@
 # After this setup is done, get_emails.py will be executed; see the doc for that
 # program.
 #
-CSVFILENAME="Heath Robinson Museum Visitor Survey.csv"
 
 expand_one () {
 RESPDIR=exports/$DATADIR/response
@@ -65,6 +74,10 @@ echo python3 src/get_emails.py $CLEANDIR/$EXPORTNAME.csv
 }
 #
 #         Main Program
+if [[ "$CONDA_DEFAULT_ENV" != "py6" ]]; then
+    echo Activating py6...
+    . activate py6
+fi
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NOCOLOR='\033[0m'

@@ -4,8 +4,13 @@
 # ———————————
 #
 # Input is the cleaned CSV file (in the "cleaned" dir)
+# Parameters after the first are passed to crosstabs3.py.
 # 
 set -e
+if [[ "$CONDA_DEFAULT_ENV" != "py6" ]]; then
+    echo Activating py6...
+    . activate py6
+fi
 pushd ~/pyprj/hrm/evaluation
 OUTPUTDIR="results/surveymonkey/crosstabs"
 INCSV=$(python3 <<END
@@ -29,4 +34,5 @@ if [ ! -e temp/agg.csv -o ! -e $OUTPATH -o "$1" -nt $OUTPATH ] ; then
 else
 	echo -e "\033[32mSkipping split/aggregation.\033[0m"
 fi
-python src/crosstabs3.py temp/agg.csv $OUTPATH
+shift
+python src/crosstabs3.py temp/agg.csv $OUTPATH $*

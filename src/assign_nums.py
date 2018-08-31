@@ -9,7 +9,7 @@ from config import SKIPCOLS
 
 def assign_numbers(row, skipcols=SKIPCOLS):
     """
-        Input is the first row returned from the CSV file.
+        Input is the first row returned from the original CSV file.
         From the list containing Qnn entries in the corresponding columns,
         build a list containing 'Qnn' where there was question text and
         a zero-length string otherwise.
@@ -27,7 +27,8 @@ def assign_numbers(row, skipcols=SKIPCOLS):
 
 def num_dict(row, skipcols=SKIPCOLS):
     """
-        Input is the first row returned from the CSV file.
+        Input is the first row returned from the modified CSV file where the
+        first row now contains cells with qnn where the questions begin.
         From the list containing Qnn entries in the corresponding columns,
         build a dictionary mapping <question #> -> <column #>.
     """

@@ -150,7 +150,7 @@ def count_minor_question(row, qdminor):
     """
     for anscol in range(qdminor.startcol, qdminor.limitcol):
         if row[anscol]:
-            trace(2, 'count_minor_question: minor: {}, col: {}', qdminor.qnum,
+            trace(3, 'count_minor_question: minor: {}, col: {}', qdminor.qnum,
                   anscol)
             anstext = answer_text_row[anscol]  # minor answer
             qdminor.ans_count[anstext] += 1
@@ -176,7 +176,7 @@ def count_one_row(row, qdmajor):
 
     found = False
     for anscol in range(qdmajor.startcol, qdmajor.limitcol):
-        trace(2, 'count_one_row: major: {}, col: {}', qdmajor.qnum, anscol)
+        trace(3, 'count_one_row: major: {}, col: {}', qdmajor.qnum, anscol)
         if row[anscol]:
             found = True
             anstext = answer_text_row[anscol]  # Male / Female
@@ -230,14 +230,14 @@ def make_major_qdata(major, infile):
 
 def count_answers(major_qdata):
     for majans in major_qdata.ans_dict:
-        trace(2, 'in count_answers, majans = {}', majans)
+        trace(3, 'in count_answers, majans = {}', majans)
         minor_qdata_dict = major_qdata.ans_dict[majans]
         for minq in minor_qdata_dict.values():
-            trace(2, 'minor question: {}', minq.qtext)
+            trace(3, 'minor question: {}', minq.qtext)
             for ans in minq.ans_count:
-                trace(2, r'ans: "{}" ({})', ans, minq.ans_count[ans])
+                trace(3, r'ans: "{}" ({})', ans, minq.ans_count[ans])
                 minq.total += minq.ans_count[ans]
-            trace(2, 'in count_answers, minq.total = {}', minq.total)
+            trace(3, 'in count_answers, minq.total = {}', minq.total)
 
     minq_tuple = TO_COMPARE[major_qdata.qnum]
     for minq in minq_tuple:
@@ -245,6 +245,7 @@ def count_answers(major_qdata):
         # is a dictionary where the key is the minor answer and the value is
         # the sum of the minor answer counts.
         anstotal = major_qdata.minor_totals[minq]
+        # valuetotal will be used to compute the mean value
         valuetotal = major_qdata.value_totals[minq]
         # accumulate minor answers across all major answers
         for ix, majans in enumerate(major_qdata.ans_dict, start=1):
@@ -316,7 +317,7 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
         else:
             cell = ws.cell(row=row + 3, column=col, value=meanvalue)
             cell.number_format = '#0.00'
-        cell.font = Font(bold=True)
+        cell.font = BOLD
     for r in range(3, row + 4):
         ws.cell(row=r, column=startcol).border = LEFT_BORDER
     if minor_qnum in TITLES:
@@ -414,10 +415,10 @@ def main():
             major_qdata = make_major_qdata(question, infile)
             # print('major_qdata:')
             # print(major_qdata)
-            print("Major question:", major_qdata.qtext)
+            trace(1, "Major question: {}", major_qdata.qtext)
             count_answers(major_qdata)
             one_sheet(major_qdata)
-            print('Major Qdata total', major_qdata.total)
+            trace(1, 'Major Qdata total {}', major_qdata.total)
     workbook.save(sys.argv[2])
 
 
