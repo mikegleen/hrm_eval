@@ -197,13 +197,15 @@ def make_major_qdata(major, infile):
     :return: this question's populated major QData and the template minor
     Qdata which contains the minor question and answers and will be used to
     accumulate totals.
+
+    Also create the global "q_dict" which maps question number to column.
     """
     global q_dict, question_text_row, answer_text_row
     reader = csv.reader(infile)
     question_row = next(reader)  # has values like q1,,,,q2,,,q3,,etc.
     # Create a dict mapping Q<minor> -> column index
     question_row.append('qx')  # dummy column at end
-    q_dict = num_dict(question_row, _args.skipcols)
+    q_dict = num_dict(question_row, _args.skipcols)  # map question # to column
     question_text_row = next(reader)
     answer_text_row = next(reader)
     minortuple = TO_COMPARE[major]
