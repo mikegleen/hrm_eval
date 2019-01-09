@@ -46,9 +46,15 @@
 # Also move the zip file from the exports directory to the exports/oldzipfiles
 # directory.
 #
-# After this setup is done, get_emails.py will be executed; see the doc for that
-# program.
+# 2018-08-31: get_emails processing removed.
+# After this setup is done, get_emails.py will be executed; see the doc for 
+# that program.
 #
+# 2018-11-06 Add call to bin/crosstabs.sh
+#
+
+# This file is in the CSV directory in the zip file which we expand below.
+CSVFILENAME="Heath Robinson Museum Visitor Survey.csv"
 
 expand_one () {
 RESPDIR=exports/$DATADIR/response
@@ -65,15 +71,17 @@ python3 src/remove_nuls.py "$CSVDIR/$CSVFILENAME" temp/rem_nuls.csv
 python3 src/clean_title.py temp/rem_nuls.csv temp/clean_title.csv
 python3 ~/pyprj/misc/put_bom.py temp/clean_title.csv $CLEANDIR/$EXPORTNAME.csv
 #rm temp/*
-python3 src/get_emails.py --dryrun $CLEANDIR/$EXPORTNAME.csv
+# python3 src/get_emails.py --dryrun $CLEANDIR/$EXPORTNAME.csv
 mv exports/${DATADIR}_${EXPORTNAME}.zip exports/old_zipfiles
-echo
-echo -e ${GREEN}If the dry run was ok, execute the following line to extract the
-echo -e email addresses and update the database:${NOCOLOR}
-echo python3 src/get_emails.py $CLEANDIR/$EXPORTNAME.csv
+# echo
+# echo -e ${GREEN}If the dry run was ok, execute the following line to extract the
+# echo -e email addresses and update the database:${NOCOLOR}
+# echo python3 src/get_emails.py $CLEANDIR/$EXPORTNAME.csv
+bin/crosstab.sh $CLEANDIR/$EXPORTNAME.csv
 }
 #
 #         Main Program
+#
 if [[ "$CONDA_DEFAULT_ENV" != "py6" ]]; then
     echo Activating py6...
     . activate py6
