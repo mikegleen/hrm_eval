@@ -29,7 +29,7 @@ mkdir -p $OUTPUTDIR
 # Do split/agg if agg.csv doesn't exist or the output doesn't exist or
 # the input is newer than the output.
 if [ ! -e temp/agg.csv -o ! -e $OUTPATH -o "$1" -nt $OUTPATH ] ; then
-	python src/split.py $1 temp/split.csv
+	python src/split.py "$1" temp/split.csv
 	python src/aggregate.py temp/split.csv temp/agg.csv
 else
 	echo -e "\033[32mSkipping split/aggregation.\033[0m"
