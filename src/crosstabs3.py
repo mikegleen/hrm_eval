@@ -391,13 +391,14 @@ def one_sheet(major_qdata):
         ans_total = major_qdata.ans_count[majans]
         setvalue(ws, rownum, 2, ans_total, major_qdata.total)
         value_total += ans_total * index
-    ws.cell(row=rownum + 3, column=1, value='MEAN VALUE').font = BOLD
+    mvrow = rownum + 3
+    ws.cell(row=mvrow, column=1, value='MEAN VALUE').font = BOLD
     try:
         mean_value = float(value_total) / float(major_qdata.total)
-        cell = ws.cell(row=rownum + 3, column=2, value=mean_value)
+        cell = ws.cell(row=mvrow, column=2, value=mean_value)
         cell.number_format = '#0.00'
     except ZeroDivisionError:
-        cell = ws.cell(row=rownum + 3, column=2, value='-')
+        cell = ws.cell(row=mvrow, column=2, value='-')
         cell.alignment = CENTER
     cell.font = BOLD
     comment = ('The mean value must be used with caution. The values are'
