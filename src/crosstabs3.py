@@ -383,13 +383,23 @@ def one_sheet(major_qdata):
     # Insert the major answers and the response totals.
     rownum = MINOR_COUNT_START + 1
     index = 0
+    value_total = 0
     for majans in major_qdata.ans_dict:  # iterate over the major answers
         rownum += MINOR_COUNT_INCREMENT
         index += 1
         ws.cell(row=rownum, column=1, value=f'({index}) ' + majans)
         ans_total = major_qdata.ans_count[majans]
         setvalue(ws, rownum, 2, ans_total, major_qdata.total)
+        value_total += ans_total * index
     ws.cell(row=rownum + 3, column=1, value='MEAN VALUE').font = BOLD
+    try:
+        mean_value = float(value_total) / float(major_qdata.total)
+        cell = ws.cell(row=rownum + 3, column=2, value=mean_value)
+        cell.number_format = '#0.00'
+    except ZeroDivisionError:
+        cell = ws.cell(row=rownum + 3, column=2, value='-')
+        cell.alignment = CENTER
+    cell.font = BOLD
     comment = ('The mean value must be used with caution. The values are'
                ' arbitrarily assiged with the first answer in a column given a'
                ' value of 1 and so on.')
