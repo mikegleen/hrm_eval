@@ -10,7 +10,6 @@ import argparse
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment
 import os.path
-import re
 import sys
 
 CENTER = Alignment(horizontal='center')
@@ -25,6 +24,9 @@ def getyear(filename):
     return int(year)
 
 
+def one_row(row, ws1, ws2, ws3):
+    pass
+
 def main():
     wb1 = load_workbook(_args.in1)
     wb2 = load_workbook(_args.in2)
@@ -37,28 +39,26 @@ def main():
         ws2 = wb2[sheetname]
         # print(sheetname)
         # print(ws1.max_row)
-        # return
         ws3 = wb3.create_sheet(sheetname)
-        # ws3.cell(row=1, column=1, value=ws1.cell(row=1, column=1).value)
-        # ws3['A1'].value = ws1['A1'].value  # Title
-        # ws3['A2'].value = ws1['A2'].value
+        ws3['A1'].value = ws1['A1'].value  # Title
+        ws3['A2'].value = ws1['A2'].value
         ws3['B3'].value = y1
         ws3['B3'].alignment = CENTER
         ws3['C3'].value = y2
         ws3['C3'].alignment = CENTER
 
-        for r in range(1, ws1.max_row):
+        for r in range(5, ws1.max_row):
             label = ws1.cell(row=r, column=1).value
             ws3.cell(row=r, column=1, value=ws1.cell(row=r, column=1).value)
             cell = ws3.cell(row=r, column=2, value=ws1.cell(row=r, column=2)
                             .value)
-            if r > 3 and not label:
+            if not label:
                 cell.style = 'Percent'
             elif label == 'MEAN VALUE':
                 cell.number_format = '#0.00'
             cell = ws3.cell(row=r, column=3, value=ws2.cell(row=r, column=2)
                             .value)
-            if r > 3 and  not label:
+            if not label:
                 cell.style = 'Percent'
             elif label == 'MEAN VALUE':
                 cell.number_format = '#0.00'
