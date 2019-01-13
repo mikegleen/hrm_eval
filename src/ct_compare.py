@@ -24,8 +24,20 @@ def getyear(filename):
     return int(year)
 
 
-def one_row(row, ws1, ws2, ws3):
-    pass
+def one_row(r, ws1, ws2, ws3):
+    label = ws1.cell(row=r, column=1).value
+    ws3.cell(row=r, column=1, value=ws1.cell(row=r, column=1).value)
+    cell = ws3.cell(row=r, column=2, value=ws1.cell(row=r, column=2).value)
+    if not label:
+        cell.style = 'Percent'
+    elif label == 'MEAN VALUE':
+        cell.number_format = '#0.00'
+    cell = ws3.cell(row=r, column=3, value=ws2.cell(row=r, column=2).value)
+    if not label:
+        cell.style = 'Percent'
+    elif label == 'MEAN VALUE':
+        cell.number_format = '#0.00'
+
 
 def main():
     wb1 = load_workbook(_args.in1)
@@ -48,20 +60,7 @@ def main():
         ws3['C3'].alignment = CENTER
 
         for r in range(5, ws1.max_row):
-            label = ws1.cell(row=r, column=1).value
-            ws3.cell(row=r, column=1, value=ws1.cell(row=r, column=1).value)
-            cell = ws3.cell(row=r, column=2, value=ws1.cell(row=r, column=2)
-                            .value)
-            if not label:
-                cell.style = 'Percent'
-            elif label == 'MEAN VALUE':
-                cell.number_format = '#0.00'
-            cell = ws3.cell(row=r, column=3, value=ws2.cell(row=r, column=2)
-                            .value)
-            if not label:
-                cell.style = 'Percent'
-            elif label == 'MEAN VALUE':
-                cell.number_format = '#0.00'
+            one_row(r, ws1, ws2, ws3)
         ws3.column_dimensions['A'].width = ws1.column_dimensions['A'].width
     wb3.save(_args.outfile)
 
