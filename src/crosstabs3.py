@@ -5,8 +5,8 @@ crosstabs3 - based on crosstabs2 plus multiple minor questions (across the top)
 
 Input is a CSV file produced by extract_csv.sh. The creation method is:
 1. Click on "Analyze Results".
-2. Step deleted.
-3. Click on "Export All"
+2. Click on "SAVE AS".
+3. Click on "Export file"
 4. Select the dropdown "All response data".
 5. Select the option ".XLS" (the leftmost option).
 6. In "Data View", select "Original View".
