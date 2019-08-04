@@ -43,6 +43,8 @@ def clean_row(dirtyrow):
 
 
 def fix1date(row, col):
+    # print(f'***{col}')
+    # print(row)
     coln = col2num(col)
     s = row[coln]
     if not s:
@@ -52,11 +54,14 @@ def fix1date(row, col):
         d = dt.strptime(s, '%m/%d/%Y %I:%M:%S %p')
     else:
         # print(f'---------- "{s}"')
-        d = dt.strptime(s, '%m/%d/%Y')
+        # kludge for column 'j' which is in d/m/y order
+        d = dt.strptime(s, '%d/%m/%Y')
     row[coln] = d.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def fix_dates(row):
+    # Warning: If changing columns, update fix1date to get the month and day
+    #          order right.
     for col in ('c', 'd', 'j'):
         fix1date(row, col)
 
