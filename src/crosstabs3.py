@@ -18,6 +18,12 @@ An input file might be:
     ~/Downloads/hrm/evaluation/data_exports/2017-11-05/cleaned/126.csv
 or (via the symbolic link)
     ~/pyprj/hrm/evaluation/exports/2017-11-05/cleaned/126.csv
+
+The cleaned file is processed before input to crosstabs3:
+    split.py     -- splits question 9 into its subquestions 9.01, 9.02, etc.
+    aggregate.py -- consolidates some answers. For example question 13 has
+    answers of 'Very unlikely', 'Unlikely', 'Neither likely nor unlikely',
+    'Likely', 'Very likely'. These are consolidated to 'Not very' or 'Likely'.
 """
 import argparse
 import codecs
@@ -28,10 +34,12 @@ from openpyxl.styles import Font, Alignment
 from openpyxl.styles.borders import Border, Side
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
+from typing import Union
 
 from assign_nums import num_dict
 from config import SKIPCOLS
 from config import CROSSTAB_TITLES as TITLES
+# MAJOR_ and MINOR_ QUESTIONS are lists of strings like ['Q1', 'Q2', ...]
 from config import MAJOR_QUESTIONS, MINOR_QUESTIONS
 #
 # Constants for sheet creation:
@@ -59,7 +67,7 @@ TO_COMPARE = {major: [minor for minor in MINOR_QUESTIONS if minor != major]
 
 class Qdata:
 
-    def __init__(self, qnum):
+    def __init__(self, qnum: str):
         self.qnum = qnum
         self.startcol = q_dict[qnum]
         trace(3, 'qnum {}, startcol: {}', qnum, self.startcol)
@@ -67,10 +75,12 @@ class Qdata:
         # An exception to this rule is when a question has been split, in
         # which case, for example, q9 is replaced by q9.01..q9.16. So we have
         # to use a roundabout method to get the "next" question's columm.
+        # Note that there is a dummy entry at the end of q_dict which allows
+        # the last legitimate qnum to compute a limitcol.
         qlist = list(q_dict)
-        qix = qlist[qlist.index(qnum) + 1]
-        self.limitcol = q_dict[qix]
-        trace(3, '  qix: {}, limitcol: {}', qix, self.limitcol)
+        limitix = qlist[qlist.index(qnum) + 1]
+        self.limitcol = q_dict[limitix]
+        trace(3, '  limitix: {}, limitcol: {}', limitix, self.limitcol)
         # qtext - the text name of the question, from row 2
         self.qtext = question_text_row[self.startcol]
 
@@ -80,9 +90,9 @@ class Qdata:
 
         # ans_count - dictionary mapping the answer text to the count
 
-        self.ans_dict = OrderedDict([(answer_text_row[n], 0)
-                                     for n in range(self.startcol,
-                                                    self.limitcol)])
+        self.ans_dict: Union[int, dict] = OrderedDict(
+            [(answer_text_row[n], 0)
+             for n in range(self.startcol, self.limitcol)])
         self.ans_count = OrderedDict([(answer_text_row[n], 0)
                                      for n in range(self.startcol,
                                                     self.limitcol)])
@@ -193,7 +203,7 @@ def count_one_row(row, qdmajor):
 def make_major_qdata(major, infile):
     """
     :param major:  the question for the left column, a string like "q4"
-    :param infile:
+    :param infile: a pass is made over the data for each major question.
     :return: this question's populated major QData and the template minor
     Qdata which contains the minor question and answers and will be used to
     accumulate totals.
@@ -204,11 +214,12 @@ def make_major_qdata(major, infile):
     reader = csv.reader(infile)
     question_row = next(reader)  # has values like q1,,,,q2,,,q3,,etc.
     # Create a dict mapping Q<minor> -> column index
-    question_row.append('qx')  # dummy column at end
-    q_dict = num_dict(question_row, _args.skipcols)  # map question # to column
+    question_row.append('qx')  # dummy column at end for Qdata constructor
+    # map question number (like 'Q4') to column
+    q_dict: dict = num_dict(question_row, _args.skipcols)
     question_text_row = next(reader)
     answer_text_row = next(reader)
-    minortuple = TO_COMPARE[major]
+    minortuple: list = TO_COMPARE[major]
     qdmajor = Qdata(major)
     '''
         For each major answer, create a dict of minor qdata and store it as the
@@ -231,6 +242,12 @@ def make_major_qdata(major, infile):
 
 
 def count_answers(major_qdata):
+    """
+    Called once for each major question.
+
+    :param major_qdata:
+    :return: None
+    """
     for majans in major_qdata.ans_dict:
         trace(3, 'in count_answers, majans = {}', majans)
         minor_qdata_dict = major_qdata.ans_dict[majans]
@@ -289,7 +306,8 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
     """
     # put the total values in the "VALID RESPONSES" row.
     col = startcol - 1
-    minor_qdata = row = None  # avoid warnings
+    minor_qdata = None  # avoid warnings
+    row = 0  # avoid warnings
     # Iterate over the answers for this minor question.
     for minans, mincount in major_qdata.minor_totals[minor_qnum].items():
         col += 1
@@ -463,5 +481,8 @@ if __name__ == '__main__':
     if sys.version_info.major < 3 or sys.version_info.minor < 6:
         raise ImportError('requires Python 3.6')
     _args = getargs()
+    # avoid global variable warning
+    workbook = None
+    q_dict, question_text_row, answer_text_row = {}, None, None
     main()
     print('End crosstabs3.')
