@@ -25,12 +25,12 @@ def assign_numbers(row, skipcols=SKIPCOLS):
     return nums
 
 
-def num_dict(row, skipcols=SKIPCOLS):
+def num_dict(row, skipcols=SKIPCOLS) -> dict:
     """
         Input is the first row returned from the modified CSV file where the
         first row now contains cells with qnn where the questions begin.
         From the list containing Qnn entries in the corresponding columns,
-        build a dictionary mapping <question #> -> <column #>.
+        build a dictionary mapping <question #> -> <zero based column #>.
     """
     en = enumerate(row[skipcols:])
     # print(list(en))
