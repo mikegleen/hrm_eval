@@ -8,7 +8,7 @@ Input is a CSV file produced by extract_csv.sh. The creation method is:
 2. Click on "SAVE AS".
 3. Click on "Export file"
 4. Select the dropdown "All response data".
-5. Select the option ".XLS" (the leftmost option).
+5. Select the option ".CSV" (the leftmost option).
 6. In "Data View", select "Original View".
 7. In "Columns", select "Expanded".
 8. In "Cells", select "Actual Answer Text".
@@ -216,7 +216,7 @@ def make_major_qdata(major, infile):
     # Create a dict mapping Q<minor> -> column index
     question_row.append('qx')  # dummy column at end for Qdata constructor
     # map question number (like 'Q4') to column
-    q_dict: dict = num_dict(question_row, _args.skipcols)
+    q_dict = num_dict(question_row, _args.skipcols)
     question_text_row = next(reader)
     answer_text_row = next(reader)
     minortuple: list = TO_COMPARE[major]
