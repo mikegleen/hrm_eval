@@ -40,7 +40,7 @@ from assign_nums import num_dict
 from config import SKIPCOLS
 from config import CROSSTAB_TITLES as TITLES
 # MAJOR_ and MINOR_ QUESTIONS are lists of strings like ['Q1', 'Q2', ...]
-from config import MAJOR_QUESTIONS, MINOR_QUESTIONS
+from config import MAJOR_QUESTIONS, MINOR_QUESTIONS, SANITY_QUESTION
 #
 # Constants for sheet creation:
 # The row to insert minor titles and answer names
@@ -185,12 +185,16 @@ def count_one_row(row, qdmajor: Qdata):
 
     :param row:
     :param qdmajor: The current major question's Qdata
-    :return:
+    :return: None
     """
-    qdmajor.base += 1
     # row[2] is like '2017-12-08T19:42:01Z'
     ansyear = int(row[2][:4])
+    if _args.year and ansyear != _args.year:
+        return
+    if _args.oldestyear and ansyear < _args.oldestyear:
+        return
     qdmajor.yearset.add(ansyear)
+    qdmajor.base += 1
     qdmajor.year_base[ansyear] += 1
     # First check that there is at least one answer to each minor question
     error = validate_one_row(row, qdmajor) if _args.complete else False
@@ -229,6 +233,9 @@ def make_major_qdata(major, infile):
     global q_dict, question_text_row, answer_text_row
     reader = csv.reader(infile)
     question_row = next(reader)  # has values like q1,,,,q2,,,q3,,etc.
+    if SANITY_QUESTION.lower() not in question_row:
+        print('Invalid CSV file. Maybe not the output of aggregate->split.')
+        sys.exit(1)
     # Create a dict mapping Q<minor> -> column index
     question_row.append('qx')  # dummy column at end for Qdata constructor
     # map question number (like 'Q4') to column
@@ -389,8 +396,8 @@ def one_year(ws, major_qdata, year, col):
     cell = ws.cell(row=row, column=col, value=str(year))
     cell.font = BOLD
     cell.alignment = CENTER
-    print(major_qdata.year_base)
-    print(year, major_qdata.year_base[year])
+    # print(major_qdata.year_base)
+    # print(year, major_qdata.year_base[year])
     setvalue(ws, BASE_ROW, col, major_qdata.year_base[year], major_qdata.base)
     row = MINOR_COUNT_START  # Valid Responses
     total = major_qdata.year_totals[year]
@@ -523,6 +530,10 @@ def getargs():
     parser.add_argument('-c', '--complete', action='store_true', help='''
                         If specified, require that each minor question has
                         at least one answer otherwise the row is rejected.''')
+    parser.add_argument('-o', '--oldestyear', type=int, default=0,
+                        help='''
+                        If specified, ignore responses before this year.
+                        ''')
     parser.add_argument('-s', '--skipcols', type=int, default=SKIPCOLS,
                         help=f'''Number of columns to ignore before extracting
                         the column numbers for defined questions. Default is

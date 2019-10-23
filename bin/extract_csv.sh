@@ -4,7 +4,7 @@
 # --------------
 #
 # Run this script in the ~/pyprj/hrm/evaluation directory. Note that the
-# exports subdirectory is a symbolic link to
+# *exports* subdirectory is a symbolic link to
 # ~/Downloads/hrm/evaluation/data_exports.
 # This script will search the "exports" directory for zip files and process
 # the first one found.
@@ -26,7 +26,7 @@
 # Select Heath Robinson Museum Visitor Survey / Analyze.
 # Click SAVE AS / Export file / Export All / All responses data.
 # On the popup "Export Survey Data" select:
-# File format: XLS
+# File format: CSV
 # Data view:   Original View
 # Columns:     Expanded
 # Cells:       Actual Answer Text
@@ -82,9 +82,10 @@ bin/crosstab.sh $CLEANDIR/$EXPORTNAME.csv
 #
 #         Main Program
 #
-if [[ "$CONDA_DEFAULT_ENV" != "py6" ]]; then
-    echo Activating py6...
-    . activate py6
+if [[ "$CONDA_DEFAULT_ENV" != "py7" ]]; then
+    echo Activating py7...
+    eval "$(conda shell.bash hook)"
+    conda activate py7
 fi
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -105,6 +106,15 @@ DATADIR=`python3 -c "print('$DATADIR'.split('/')[1])"`
 EXPORTNAME=`python3 -c "print('$zipfile'[:-4].split('_', 1)[1])"`
 # EXPORTNAME = "152"
 echo $DATADIR $EXPORTNAME
+# Sanity check valid file name.
+re='^[0-9]+-[0-9]+-[0-9]+$'
+if ! [[ $DATADIR =~ $re ]] ; then
+	echo -e "${RED}error: Not a date${NOCOLOR}" >&2; exit 1
+fi
+re='^[0-9]+$'
+if ! [[ $EXPORTNAME =~ $re ]] ; then
+	echo -e "${RED}error: Not a number${NOCOLOR}" >&2; exit 1
+fi
 expand_one
 break
 done

@@ -6,10 +6,15 @@
 # Input is the cleaned CSV file (in the "cleaned" dir)
 # Parameters after the first are passed to crosstabs3.py.
 # 
+CONDAENV=py7
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NOCOLOR='\033[0m'
 set -e
-if [[ "$CONDA_DEFAULT_ENV" != "py6" ]]; then
-    echo Activating py6...
-    . activate py6
+if [[ "$CONDA_DEFAULT_ENV" != $CONDAENV ]]; then
+    echo Activating $CONDAENV...
+    eval "$(conda shell.bash hook)"
+    conda activate py7
 fi
 pushd ~/pyprj/hrm/evaluation
 OUTPUTDIR="results/surveymonkey/crosstabs"
@@ -32,7 +37,7 @@ if [ ! -e temp/agg.csv -o ! -e $OUTPATH -o "$1" -nt $OUTPATH ] ; then
 	python src/split.py "$1" temp/split.csv
 	python src/aggregate.py temp/split.csv temp/agg.csv
 else
-	echo -e "\033[32mSkipping split/aggregation.\033[0m"
+	echo -e "${GREEN}Skipping split/aggregation.${NOCOLOR}"
 fi
 shift
 python src/crosstabs3.py temp/agg.csv $OUTPATH $*

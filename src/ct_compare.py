@@ -25,18 +25,18 @@ def getyear(filename):
 
 
 def one_row(r, ws1, ws2, ws3):
+    def format_cell():
+        if not label:
+            cell.style = 'Percent'
+        elif label == 'MEAN VALUE':
+            cell.number_format = '#0.00'
+
     label = ws1.cell(row=r, column=1).value
     ws3.cell(row=r, column=1, value=ws1.cell(row=r, column=1).value)
     cell = ws3.cell(row=r, column=2, value=ws1.cell(row=r, column=2).value)
-    if not label:
-        cell.style = 'Percent'
-    elif label == 'MEAN VALUE':
-        cell.number_format = '#0.00'
+    format_cell()
     cell = ws3.cell(row=r, column=3, value=ws2.cell(row=r, column=2).value)
-    if not label:
-        cell.style = 'Percent'
-    elif label == 'MEAN VALUE':
-        cell.number_format = '#0.00'
+    format_cell()
 
 
 def main():
@@ -49,8 +49,6 @@ def main():
     for sheetname in wb1.sheetnames:
         ws1 = wb1[sheetname]
         ws2 = wb2[sheetname]
-        # print(sheetname)
-        # print(ws1.max_row)
         ws3 = wb3.create_sheet(sheetname)
         ws3['A1'].value = ws1['A1'].value  # Title
         ws3['A2'].value = ws1['A2'].value
