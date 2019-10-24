@@ -48,9 +48,10 @@ MINOR_NUMBER_ROW = 3
 MINOR_QUESTION_NAME_ROW = 4
 MINOR_ANSWER_NAME_ROW = 5
 BASE_ROW = 6
+VALID_RESPONSES_ROW = 8
 # The row number where we initialize the loop that inserts row counts.
 # The row number is incremented before each row is inserted.
-MINOR_COUNT_START = 8
+MINOR_COUNT_START = 12
 MINOR_COUNT_INCREMENT = 3
 
 LEFT_BORDER = Border(left=Side(border_style='thin'))
@@ -364,18 +365,18 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
         width = MIN_COL_WIDTH if width < MIN_COL_WIDTH else width
         width = MAX_COL_WIDTH if width > MAX_COL_WIDTH else width
         ws.column_dimensions[get_column_letter(col)].width = width
-        row = MINOR_COUNT_START
+        row = VALID_RESPONSES_ROW
         setvalue(ws, row, col, mincount, major_qdata.total)
         minortotal = major_qdata.minor_totals[minor_qnum][minans]
         valuetotal = major_qdata.value_totals[minor_qnum][minans]
         # Iterate over the major answers
-        row += 1  # There's an extra row after the Valid Responses row.
+        row = MINOR_COUNT_START
         for majans, minor_qdata_dict in major_qdata.ans_dict.items():
-            row += MINOR_COUNT_INCREMENT
             minor_qdata = minor_qdata_dict[minor_qnum]
             setvalue(ws, row, col, minor_qdata.ans_count[minans], minortotal)
-        setmean(ws, row + 3, col, valuetotal, minortotal)
-    for r in range(3, row + 4):
+            row += MINOR_COUNT_INCREMENT
+        setmean(ws, row, col, valuetotal, minortotal)
+    for r in range(3, row + 1):
         ws.cell(row=r, column=startcol).border = LEFT_BORDER
     if minor_qnum in TITLES:
         txt = TITLES[minor_qnum]
@@ -399,16 +400,16 @@ def one_year(ws, major_qdata, year, col):
     # print(major_qdata.year_base)
     # print(year, major_qdata.year_base[year])
     setvalue(ws, BASE_ROW, col, major_qdata.year_base[year], major_qdata.base)
-    row = MINOR_COUNT_START  # Valid Responses
+    row = VALID_RESPONSES_ROW
     total = major_qdata.year_totals[year]
     setvalue(ws, row, col, total, major_qdata.year_base[year])
 
-    row = MINOR_COUNT_START + 1
+    row = MINOR_COUNT_START
     for ans in major_qdata.year_answers:
-        row += MINOR_COUNT_INCREMENT
         value = major_qdata.year_answers[ans][year]
         setvalue(ws, row=row, column=col, value=value, total=total)
-    setmean(ws, row + 3, col, major_qdata.year_value_totals[year],
+        row += MINOR_COUNT_INCREMENT
+    setmean(ws, row, col, major_qdata.year_value_totals[year],
             major_qdata.year_totals[year])
 
 
@@ -460,30 +461,29 @@ def one_sheet(major_qdata):
     ws.column_dimensions['A'].width = colw  # * 1.10
 
     # Insert the major answers and the response totals.
-    rownum = MINOR_COUNT_START + 1
+    rownum = MINOR_COUNT_START
     index = 0
     value_total = 0
     for majans in major_qdata.ans_dict:  # iterate over the major answers
-        rownum += MINOR_COUNT_INCREMENT
         index += 1
         ws.cell(row=rownum, column=1, value=f'({index}) ' + majans)
         ans_total = major_qdata.ans_count[majans]
         setvalue(ws, rownum, 2, ans_total, major_qdata.total)
         value_total += ans_total * index
-    mvrow = rownum + 3
-    ws.cell(row=mvrow, column=1, value='MEAN VALUE').font = BOLD
+        rownum += MINOR_COUNT_INCREMENT
+    ws.cell(row=rownum, column=1, value='MEAN VALUE').font = BOLD
     try:
         mean_value = float(value_total) / float(major_qdata.total)
-        cell = ws.cell(row=mvrow, column=2, value=mean_value)
+        cell = ws.cell(row=rownum, column=2, value=mean_value)
         cell.number_format = '#0.00'
     except ZeroDivisionError:
-        cell = ws.cell(row=mvrow, column=2, value='-')
+        cell = ws.cell(row=rownum, column=2, value='-')
         cell.alignment = CENTER
     cell.font = BOLD
     comment = ('The mean value must be used with caution. The values are'
                ' arbitrarily assiged with the first answer in a column given a'
                ' value of 1 and so on.')
-    ws.cell(row=rownum + 5, column=3, value=comment)
+    ws.cell(row=rownum + 2, column=3, value=comment)
 
     # Iterate over the minor questions, inserting the minor answers.
     coln = 3
@@ -507,23 +507,26 @@ def main():
     del workbook[workbook.sheetnames[0]]  # remove the default sheet
     for question in MAJOR_QUESTIONS:
         with codecs.open(sys.argv[1], 'r', 'utf-8-sig') as infile:
+            trace(2, "Major question: {}", question)
             major_qdata = make_major_qdata(question, infile)
-            # print('major_qdata:')
-            # print(major_qdata)
-            trace(1, "Major question: {}", major_qdata.qtext)
             count_answers(major_qdata)
             one_sheet(major_qdata)
-            trace(1, 'Major Qdata total {}', major_qdata.total)
+            text = major_qdata.qtext
+            if len(text) > 50:
+                text = text[:50] + '...'
+            trace(1, 'Major question {}: "{}" total {}', major_qdata.qnum,
+                  text, major_qdata.total)
     workbook.save(sys.argv[2])
 
 
 def getargs():
-    parser = argparse.ArgumentParser(
-        description='''
+    parser = argparse.ArgumentParser(description='''
         Create a crosstabs xlsx file.
         ''')
     parser.add_argument('infile', help='''
-         The CSV file that has been cleaned by extract_csv.sh''')
+         The CSV file that has been processed by extract_csv.sh. The
+         full tool chain clean->aggregate->split is required to put the
+         input file into the correct format.''')
     parser.add_argument('outfile',
                         help='''output XLSX file.
         ''')
