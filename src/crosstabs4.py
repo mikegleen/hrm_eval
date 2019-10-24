@@ -506,7 +506,7 @@ def main():
     workbook = Workbook()
     del workbook[workbook.sheetnames[0]]  # remove the default sheet
     for question in MAJOR_QUESTIONS:
-        with codecs.open(sys.argv[1], 'r', 'utf-8-sig') as infile:
+        with codecs.open(_args.infile, 'r', 'utf-8-sig') as infile:
             trace(2, "Major question: {}", question)
             major_qdata = make_major_qdata(question, infile)
             count_answers(major_qdata)
@@ -516,7 +516,7 @@ def main():
                 text = text[:50] + '...'
             trace(1, 'Major question {}: "{}" total {}', major_qdata.qnum,
                   text, major_qdata.total)
-    workbook.save(sys.argv[2])
+    workbook.save(_args.outfile)
 
 
 def getargs():
