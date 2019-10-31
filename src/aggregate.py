@@ -33,7 +33,7 @@ Aggmap = namedtuple('Aggmap', ('newcol', 'oldcols'))
 Qinfo = namedtuple('Qinfo', ('ix', 'len'))
 AGGLIST = [
     ('q10', [Aggmap('Not very', ('- very unsatisfied', '- 2', '- 3', '- 4',
-                               '- 5')),
+                                 '- 5')),
              Aggmap('Quite', ('- satisfied', '- 7', '- 8')),
              Aggmap('Very', ('- 9', '- extremely satisfied'))
           ]),
