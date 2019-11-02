@@ -36,20 +36,20 @@ AGGLIST = [
                                  '- 5')),
              Aggmap('Quite', ('- satisfied', '- 7', '- 8')),
              Aggmap('Very', ('- 9', '- extremely satisfied'))
-          ]),
+            ]),
     ('q13', [Aggmap('Not very', ('Very unlikely', 'Unlikely',
                                  'Neither likely nor unlikely')),
              Aggmap('Likely', ('Likely', 'Very likely'))
-          ]),
+            ]),
     ('q15', [Aggmap('Female', ('Female',)),
              Aggmap('Male', ('Male',))
-          ]),
+            ]),
     ('q16', [Aggmap('Under 55', ('Under 16', '16 - 34', '35 - 54')),
              Aggmap('55 or over', ('55 - 64', '65 or over'))
-          ]),
+            ]),
     ('q17', [Aggmap('Not disabled', ('No',)),
              Aggmap('Disabled', ('Yes, limited a little', 'Yes, limited a lot')),
-          ]),
+            ]),
     ('q18', [Aggmap('White British',
                  ('White - British (English/Scottish/Welsh/Northern Irish)',)),
              Aggmap('Other', ('White - Irish', 'other White', 'Indian',
@@ -59,11 +59,11 @@ AGGLIST = [
                               'Middle Eastern / Iraqi / Iranian',
                               'Arab', 'Mixed / Multiple ethnic group(s)',
                               'other ethnicity'))
-          ]),
+             ]),
     ('q19', [Aggmap('Harrow', ('Harrow borough',)),
              Aggmap('Other London', ('other London borough',)),
              Aggmap('Elsewhere', ('elsewhere in UK', 'Not in UK')),
-          ]),
+            ]),
 ]
 # All of the mappings for the sub-questions of question 9 are identical.
 AGGMAP9 = [Aggmap('not good', ('Very Poor', 'Poor', 'Neither Good nor Poor')),
