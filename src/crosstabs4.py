@@ -50,7 +50,6 @@ MINOR_ANSWER_NAME_ROW = 5
 BASE_ROW = 6
 VALID_RESPONSES_ROW = 8
 # The row number where we initialize the loop that inserts row counts.
-# The row number is incremented before each row is inserted.
 MINOR_COUNT_START = 12
 MINOR_COUNT_INCREMENT = 3
 
@@ -393,8 +392,7 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
 def one_year(ws, major_qdata, year, col):
     width = MIN_COL_WIDTH
     ws.column_dimensions[get_column_letter(col)].width = width
-    row = MINOR_NUMBER_ROW
-    cell = ws.cell(row=row, column=col, value=str(year))
+    cell = ws.cell(row=MINOR_NUMBER_ROW, column=col, value=str(year))
     cell.font = BOLD
     cell.alignment = CENTER
     # print(major_qdata.year_base)
