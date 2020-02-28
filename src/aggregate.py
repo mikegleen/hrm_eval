@@ -106,8 +106,8 @@ def inv_aggdict():
     names. For example, assuming we have only question 16 where AGGLIST has:
 
         ('q16', [Aggmap('Under 55', ('Under 16', '16 - 34', '35 - 54')),
-              Aggmap('55 or over', ('55 - 64', '65 or over'))
-              ]),
+                 Aggmap('55 or over', ('55 - 64', '65 or over'))
+                ]),
 
     INV_AGGDICT will be:
 
@@ -325,6 +325,11 @@ def getargs():
                         help='''Check that the aggregation configuration
                         matches the CSV file.
         ''')
+    agg_questions = ', '.join(AGGDICT)
+    parser.add_argument('-e', '--exclude', help=f'''
+         The named question will not be aggregated. This must be one of:
+         {agg_questions}
+        ''')
     parser.add_argument('infile', help='''
          The CSV file that has been cleaned by extract_csv.sh''')
     parser.add_argument('outfile',
@@ -342,6 +347,13 @@ if __name__ == '__main__':
     args = getargs()
     infile = codecs.open(args.infile, 'r', 'utf-8-sig')
     outfile = codecs.open(args.outfile, 'w', 'utf-8-sig')
+    if args.exclude:
+        exclude = args.exclude.lower()
+        if exclude in AGGDICT:
+            del AGGDICT[exclude]
+        else:
+            print(f'"{exclude}" is not a question to be aggregated.')
+            sys.exit(1)
     INV_AGGDICT = inv_aggdict()
     main()
     print('End aggregate.')
