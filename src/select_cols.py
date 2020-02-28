@@ -122,8 +122,7 @@ def getargs():
 
 
 if __name__ == '__main__':
-    if sys.version_info.major * 1000 + sys.version_info.minor < 3007:
-        raise ImportError('requires Python 3.7')
+    assert sys.version_info >= (3, 7)
     _args = getargs()
     infile = codecs.open(_args.infile, 'r', 'utf-8-sig')
     outfile = open(_args.outfile, 'w', encoding='utf-8-sig', newline=None if
