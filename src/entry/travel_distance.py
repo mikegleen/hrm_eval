@@ -5,41 +5,11 @@ import argparse
 import codecs
 from collections import defaultdict
 import csv
-from haversine import haversine, Unit
-import re
 import pickle
 import sys
 
 WHR_LOCATION = (51.5920, -0.3870)  # lat, lng
 MERGEDPLACENAMES_P = 'results/entry/mergedplacenames.pickle'
-
-
-# def load_placemarks(incsv, ldplacemarks):
-#
-#     placemarks = {}
-#     zerolat = set()
-#     for row in incsv:
-#         lat = float(row['lat'])
-#         long = float(row['long'])
-#         name = row['place15nm'].lower()
-#         if lat == 0:
-#             zerolat.add(name)
-#             continue
-#         newdistance = haversine(WHR_LOCATION, (lat, long), unit=Unit.MILES)
-#         if name not in placemarks or newdistance < placemarks[name]:
-#             placemarks[name] = newdistance
-#     # print(f'number with zero lat: {len(zerolat)}')
-#     # for name in zerolat:
-#     #     print(name)
-#     if ldplacemarks:
-#         nadded = 0
-#         for ldp in ldplacemarks:
-#             if ldp not in placemarks:
-#                 nadded += 1
-#                 placemarks[ldp] = ldplacemarks[ldp][0]
-#         print(f'London placemarks added: {nadded}')
-#     print(f'Total placemarks: {len(placemarks)}')
-#     return placemarks
 
 
 def load_recodes(incsv):
