@@ -6,6 +6,7 @@ import codecs
 from collections import defaultdict
 import csv
 import pickle
+import re
 import sys
 
 WHR_LOCATION = (51.5920, -0.3870)  # lat, lng
@@ -15,45 +16,75 @@ MERGEDPLACENAMES_P = 'results/entry/mergedplacenames.pickle'
 def load_recodes(incsv):
     rec = {}
     for row in incsv:
-        rec[row['from'].strip()] = row['recoded'].strip()
+        rec[row['from'].strip()] = row['recoded'].strip().lower()
     return rec
 
 
 def recode_place(placename):
+    global numrecoded
     if recodes and placename in recodes:
+        numrecoded += 1
         return recodes[placename]
     return placename
 
 
 def process_survey(insurveycsv, placemarks, outdistfile):
+    global numrecoded
     numrow = numok = numblank = 0
-    notfound = defaultdict(int)
-    for row in insurveycsv:
+
+    def parserow(row):
+        """
+
+        :param row: A row from the CSV file as a dictionary
+        :return: a list of the places in the wherefrom field. The wherefrom
+        field may indicate multiple visitors from different places separated
+        by "/" or "+" surrounded by optional spaces.
+        """
+        datestr = row['date']
+        wherefrom = row['wherefrom'].strip().lower()
+        placelist = re.split(r'\s*/|\+\s*', wherefrom)
+        ret = []
+        for oneplace in placelist:
+            onedict = {'wherefrom': oneplace, 'date': datestr}
+            ret.append(onedict)
+        return ret
+
+    def onevisit(row):
+        nonlocal numrow, numblank, numok
         numrow += 1
         wherefrom = row['wherefrom'].strip().lower()
         # print(wherefrom)
         if not wherefrom:
             numblank += 1
-            continue
+            return
         if wherefrom not in placemarks:
             recoded_place = recode_place(wherefrom)
             if recoded_place is None or recoded_place not in placemarks:
                 notfound[wherefrom] += 1
-                continue
+                return
             wherefrom = recoded_place
         distance = placemarks[wherefrom]
         datestr = row['date']
         print(f'{datestr},{wherefrom},{distance}', file=outdistfile)
         numok += 1
+
+    notfound = defaultdict(int)
+    numcsvrows = 0
+    for csvrow in insurveycsv:
+        numcsvrows += 1
+        places = parserow(csvrow)
+        for place in places:
+            onevisit(place)
     if _args.notfound:
         nffile = open(_args.notfound, 'w')
         # for name in sorted([(x[1], x[0]) for x in notfound.items()]):
-        for name in sorted(notfound.items(), reverse=True, key=
-                           lambda count: count[1]):
+        for name in sorted(notfound.items(), reverse=True,
+                           key=lambda count: count[1]):
             print(f'{name[1]:3},"{name[0]}"', file=nffile)
-    print(f'Total records: {numrow}')
+    print(f'Total records: {numcsvrows}, total visits: {numrow}')
     print(f'not found:{sum(notfound.values())}, unique not found: '
           f'{len(notfound)}, blank: {numblank}, ok: {numok}')
+    print(f'Recoded: {numrecoded}')
 
 
 def main():
@@ -90,6 +121,7 @@ def getargs():
 
 
 if __name__ == '__main__':
+    numrecoded = 0
     assert sys.version_info >= (3, 8)
     _args = getargs()
     if _args.verbose > 1:
