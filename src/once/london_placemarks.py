@@ -42,7 +42,7 @@ def getargs():
     return args
 
 
-def main():
+def load_placemarks():
 
     def trace(action):
         if _args.verbose > 1:
@@ -57,13 +57,13 @@ def main():
     for placemark in document.findall('kml:Placemark', ns):
         name = placemark.find('./kml:name', ns).text
         coords = placemark.find('./kml:Point/kml:coordinates', ns).text
-        places = [place.strip() for place in name.split(',')]
+        places = [place.strip().lower() for place in name.split(',')]
         long, lat, _ = coords.split(',')
         borough = None
         newdistance = haversine(WHR_LOCATION, (float(lat), float(long)),
                                 unit=Unit.MILES)
         place = places[0]
-        # There are duplicate placenames in separate boroughs, such as
+        # If there are duplicate placenames in separate boroughs, such as
         # "Hayes, Bromley" and "Hayes, Hillingdon".  We choose the closer one.
         if len(places) > 1:  # there may be multiple placenames
             borough = places[1]
@@ -75,9 +75,14 @@ def main():
                 else:
                     trace('replacing')
         placemarks[place] = Placemark(newdistance, borough)
+    return placemarks
+
+
+def main():
+    placemarks = load_placemarks()
     if _args.json:
         with open(_args.json, 'w') as jsonfile:
-            json.dump(placemarks, jsonfile)
+            json.dump(placemarks, jsonfile, indent=4)
             print(f'{len(placemarks)} rows dumped to {_args.json}')
 
 
