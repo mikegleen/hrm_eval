@@ -13,10 +13,14 @@ FIELD_NAMES = 'respondent collector start_date end_date visit_date'
 
 
 def round_to_minute(t):
+    """
+    Round to the nearest even minute.
+    """
     seconds = t.seconds % 60
     minutes = t.seconds // 60
     if seconds > 29:
-        minutes += 1
+        if seconds > 30 or minutes % 2 == 1:
+            minutes += 1
     return datetime.timedelta(minutes=minutes)
 
 
@@ -28,13 +32,13 @@ def read_excel(excel_file):
 
 
 def main():
-    pass
     s = read_excel(E3)
 
     s = s.dropna()
     s['diff'] = s.end_date-s.start_date
     s['r_diff'] = s['diff'].map(round_to_minute)
-    ss = s[(s['diff'] < pd.Timedelta('02:24:00')) & (s['diff'] > pd.Timedelta('00:04:00'))]
+    ss = s[(s['diff'] < pd.Timedelta('02:24:00'))
+           & (s['diff'] > pd.Timedelta('00:04:00'))]
     ss = ss[ss.collector != MANUAL_COLLECTOR]
     c = ss.groupby('r_diff').count()
 

@@ -1,5 +1,8 @@
 """
+Create a pickle file containing a dictionary of placename->distance from the
+museum. Input is the ONS UK database plus the postcode outcodes.
 
+Code to save the file in JSON format is diabled.
 """
 import codecs
 import csv
@@ -7,13 +10,15 @@ from haversine import haversine, Unit
 import json
 import pickle
 import sys
-import time
 
 WHR_LOCATION = (51.5920, -0.3870)  # lat, lng
 UKPLACENAMES = 'results/entry/ukplacenames.csv'
 OUTCODES = 'data/entry/postcode-outcodes.csv'
 MERGEDPLACENAMES = 'results/entry/mergedplacenames.json'
 MERGEDPLACENAMES_P = 'results/entry/mergedplacenames.pickle'
+
+SAVE_PICKLE = True
+SAVE_JSON = True
 
 
 def load_placemarks(incsv):
@@ -54,23 +59,19 @@ def load_outcodes(incsv):
 
 
 def main():
-    # t1 = time.time()
     with codecs.open(UKPLACENAMES, 'r', 'utf-8-sig') as inlocfile:
         inloccsv = csv.DictReader(inlocfile, delimiter='|')
         placemarks = load_placemarks(inloccsv)
-    # t2 = time.time()
-    # print(t2 - t1)
     with codecs.open(OUTCODES, 'r', 'utf-8-sig') as outcodesfile:
         outcodescsv = csv.DictReader(outcodesfile)
         outcodes = load_outcodes(outcodescsv)
-        placemarks.update(outcodes)
-    # t1 = time.time()
-    with open(MERGEDPLACENAMES_P, 'wb') as mergedfile:
-        pickle.dump(placemarks, mergedfile, pickle.HIGHEST_PROTOCOL)
-    # print(time.time() - t1)
-    # with open(MERGEDPLACENAMES, 'w') as mergedfile:
-    #     json.dump(placemarks, mergedfile)
-
+    placemarks.update(outcodes)
+    if SAVE_PICKLE:
+        with open(MERGEDPLACENAMES_P, 'wb') as mergedfile:
+            pickle.dump(placemarks, mergedfile, pickle.HIGHEST_PROTOCOL)
+    if SAVE_JSON:
+        with open(MERGEDPLACENAMES, 'w') as mergedfile:
+            json.dump(placemarks, mergedfile, indent=4)
 
 
 if __name__ == '__main__':

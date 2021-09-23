@@ -5,7 +5,7 @@
 #
 # Run this script in the ~/pyprj/hrm/evaluation directory. Note that the
 # *exports* subdirectory is a symbolic link to
-# ~/Downloads/hrm/evaluation/data_exports.
+# "~/Library/Mobile Documents/com~apple~CloudDocs/hrm/evaluation/data_exports"
 # This script will search the "exports" directory for zip files and process
 # the first one found.
 #
@@ -34,7 +34,7 @@
 # The <datadir> field should be in the format yyyy-mm-dd.
 # The <lastnum> field should be the number of the last survey in the export.
 #
-# Download the file to hrm/evaluation/exports. 
+# Download the file to hrm/evaluation/exports.
 # This script will unzip the file to exports/<datadir>/response/<exportname>/
 # and then create the cleaned CSV file.
 #
@@ -47,7 +47,7 @@
 # directory.
 #
 # 2018-08-31: get_emails processing removed.
-# After this setup is done, get_emails.py will be executed; see the doc for 
+# After this setup is done, get_emails.py will be executed; see the doc for
 # that program.
 #
 # 2018-11-06 Add call to bin/crosstabs.sh
@@ -82,10 +82,11 @@ bin/crosstab.sh $CLEANDIR/$EXPORTNAME.csv
 #
 #         Main Program
 #
-if [[ "$CONDA_DEFAULT_ENV" != "py7" ]]; then
-    echo Activating py7...
+CONDAENV=py8
+if [[ "$CONDA_DEFAULT_ENV" != $CONDAENV ]]; then
+    echo Activating ${CONDAENV}...
     eval "$(conda shell.bash hook)"
-    conda activate py7
+    conda activate $CONDAENV
 fi
 RED='\033[0;31m'
 GREEN='\033[0;32m'
