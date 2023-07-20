@@ -72,6 +72,7 @@ def put_html_row(outlist):
 
 def main():
     reader = csv.reader(infile)
+    writer = None  # avoid compiler warning
     if _args.html:
         put_html_header()
     else:

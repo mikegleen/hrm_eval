@@ -67,16 +67,16 @@ unzip exports/${DATADIR}_${EXPORTNAME}.zip -d $RESPDIR/$EXPORTNAME
 #
 mkdir -p $CLEANDIR
 [ -e "temp" ] || mkdir temp
-python3 src/remove_nuls.py "$CSVDIR/$CSVFILENAME" temp/rem_nuls.csv
-python3 src/clean_title.py temp/rem_nuls.csv temp/clean_title.csv
-python3 ~/pyprj/misc/put_bom.py temp/clean_title.csv $CLEANDIR/$EXPORTNAME.csv
+python src/remove_nuls.py "$CSVDIR/$CSVFILENAME" temp/rem_nuls.csv
+python src/clean_title.py temp/rem_nuls.csv temp/clean_title.csv
+python ~/pyprj/misc/put_bom.py temp/clean_title.csv $CLEANDIR/$EXPORTNAME.csv
 #rm temp/*
-# python3 src/get_emails.py --dryrun $CLEANDIR/$EXPORTNAME.csv
+# python src/get_emails.py --dryrun $CLEANDIR/$EXPORTNAME.csv
 mv exports/${DATADIR}_${EXPORTNAME}.zip exports/old_zipfiles
 # echo
 # echo -e ${GREEN}If the dry run was ok, execute the following line to extract the
 # echo -e email addresses and update the database:${NOCOLOR}
-# echo python3 src/get_emails.py $CLEANDIR/$EXPORTNAME.csv
+# echo python src/get_emails.py $CLEANDIR/$EXPORTNAME.csv
 bin/crosstab.sh $CLEANDIR/$EXPORTNAME.csv
 }
 #
@@ -100,11 +100,11 @@ if [[ $zipfile == "exports/*.zip" ]]; then
 fi
 echo Extracting $zipfile
 # zipfile = "exports/yyyy-mm-dd_exportname.zip"
-DATADIR=`python3 -c "print('$zipfile'.split('_',1)[0])"`
+DATADIR=`python -c "print('$zipfile'.split('_',1)[0])"`
 # DATADIR = "exports/yyyy-mm-dd"
-DATADIR=`python3 -c "print('$DATADIR'.split('/')[1])"`
+DATADIR=`python -c "print('$DATADIR'.split('/')[1])"`
 # DATADIR = "yyyy-mm-dd"
-EXPORTNAME=`python3 -c "print('$zipfile'[:-4].split('_', 1)[1])"`
+EXPORTNAME=`python -c "print('$zipfile'[:-4].split('_', 1)[1])"`
 # EXPORTNAME = "152"
 echo $DATADIR $EXPORTNAME
 # Sanity check valid file name.
