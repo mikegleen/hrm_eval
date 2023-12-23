@@ -11,6 +11,7 @@ the column numbers accordingly.
 """
 from excel_cols import col2num
 
+SHORTSURVEY = True
 DEBUGMODE = False  # If True, create abbreviated lists
 SKIPCOLS = 9
 SKIPROWS = 3
