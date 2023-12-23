@@ -5,7 +5,7 @@
 #
 # Run this script in the ~/pyprj/hrm/evaluation directory. Note that the
 # *exports* subdirectory is a symbolic link to
-# "~/Library/Mobile Documents/com~apple~CloudDocs/hrm/evaluation/data_exports"
+# "~/Library/Mobile Documents/com~apple~CloudDocs/hrm_downloads/evaluation/data_exports"
 # This script will search the "exports" directory for zip files and process
 # the first one found.
 #
@@ -54,7 +54,8 @@
 #
 
 # This file is in the CSV directory in the zip file which we expand below.
-CSVFILENAME="Heath Robinson Museum Visitor Survey.csv"
+CSVFILENAME="Heath Robinson Museum Short Visitor Survey.csv"
+CONDAENV=py311
 
 expand_one () {
 RESPDIR=exports/$DATADIR/response
@@ -82,7 +83,6 @@ bin/crosstab.sh $CLEANDIR/$EXPORTNAME.csv
 #
 #         Main Program
 #
-CONDAENV=py8
 if [[ "$CONDA_DEFAULT_ENV" != $CONDAENV ]]; then
     echo Activating ${CONDAENV}...
     eval "$(conda shell.bash hook)"
@@ -99,14 +99,13 @@ if [[ $zipfile == "exports/*.zip" ]]; then
     break
 fi
 echo Extracting $zipfile
-# zipfile = "exports/yyyy-mm-dd_exportname.zip"
-DATADIR=`python -c "print('$zipfile'.split('_',1)[0])"`
-# DATADIR = "exports/yyyy-mm-dd"
-DATADIR=`python -c "print('$DATADIR'.split('/')[1])"`
-# DATADIR = "yyyy-mm-dd"
+# zipfile = "exports/Data_All_yymmdd.zip"
+DATADIR=$(python -c "print('$zipfile'[-10:-4])")
+echo DATADIR = $DATADIR
+# DATADIR = "yymmdd"
 EXPORTNAME=`python -c "print('$zipfile'[:-4].split('_', 1)[1])"`
 # EXPORTNAME = "152"
-echo $DATADIR $EXPORTNAME
+echo EXPORTNAME =  $EXPORTNAME
 # Sanity check valid file name.
 re='^[0-9]+-[0-9]+-[0-9]+$'
 if ! [[ $DATADIR =~ $re ]] ; then
