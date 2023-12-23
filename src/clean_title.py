@@ -10,12 +10,14 @@ from datetime import datetime as dt
 import sys
 from bs4 import BeautifulSoup as Bs
 
+import config
 from excel_cols import col2num
 
 FIXED_HEADER = 'RespondentID,CollectorID,StartDate,EndDate,IP Address,'
 FIXED_HEADER += 'Email Address,First Name,LastName,Custom Data'
 FIXED_HEADER = FIXED_HEADER.replace(' ', '').lower().split(',')
 SKIPCOLS = len(FIXED_HEADER)
+DATE_COLS = ('c', 'd') if config.SHORTSURVEY else ('c', 'd', 'j')
 
 
 def build_header(row):
@@ -24,7 +26,7 @@ def build_header(row):
     for cell in row[SKIPCOLS:]:
         if cell:
             q_num += 1
-            header.append('q{}'.format(q_num))
+            header.append(f'q{q_num}')
         else:
             header.append('')
     return header
@@ -62,7 +64,7 @@ def fix1date(row, col):
 def fix_dates(row):
     # Warning: If changing columns, update fix1date to get the month and day
     #          order right.
-    for col in ('c', 'd', 'j'):
+    for col in DATE_COLS:
         fix1date(row, col)
 
 
@@ -86,6 +88,5 @@ def main(infilename, outfilename):
 
 
 if __name__ == '__main__':
-    if sys.version_info.major < 3:
-        raise ImportError('requires Python 3')
+    assert sys.version_info >= (3, 11)
     main(sys.argv[1], sys.argv[2])
