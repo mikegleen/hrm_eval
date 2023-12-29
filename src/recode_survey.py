@@ -64,6 +64,8 @@ def main():
     hdr_file = open(hdr_filename, newline='')
     hdr_reader = csv.reader(hdr_file)
     maxrowlen = 0
+    next(hdr_reader)
+    next(hdr_reader)
     for row in hdr_reader:
         maxrowlen = max(maxrowlen, len(row))
         writer.writerow(row)
