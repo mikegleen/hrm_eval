@@ -74,7 +74,7 @@ class Qdata:
         trace(3, 'qnum {}, startcol: {}', qnum, self.startcol)
         # For example, if our question is q13, limitcol is q14's column number.
         # An exception to this rule is when a question has been split, in
-        # which case, for example, q9 is replaced by q9.01..q9.16. So we have
+        # which case, for example, q9 is replaced by q9.01 ... q9.16. So we have
         # to use a roundabout method to get the "next" question's columm.
         # Note that there is a dummy entry at the end of q_dict which allows
         # the last legitimate qnum to compute a limitcol.
@@ -348,7 +348,7 @@ def one_minor(ws, major_qdata, minor_qnum, startcol):
                      question and its answers
     :return: the last used minor Qdata which will be used by the caller to
              extract the start and end column values.
-             Note that all of the Qdata instances for this minor question (one
+             Note that all the Qdata instances for this minor question (one
              for each major answer) have the same start/end column values.
     """
     # put the total values in the "VALID RESPONSES" row.
@@ -509,7 +509,7 @@ def main():
             major_qdata = make_major_qdata(question, infile)
             count_answers(major_qdata)
             one_sheet(major_qdata)
-            text = major_qdata.qtext
+            text: str = major_qdata.qtext
             if len(text) > 50:
                 text = text[:50] + '...'
             trace(1, 'Major question {}: "{}" total {}', major_qdata.qnum,
@@ -554,7 +554,7 @@ if __name__ == '__main__':
     assert sys.version_info >= (3, 6)
     _args = getargs()
     # avoid global variable warning
-    workbook = None
-    q_dict, question_text_row, answer_text_row = {}, None, None
+    workbook: Workbook | None = None
+    q_dict, question_text_row, answer_text_row = {}, [], []
     main()
     print('End crosstabs4.')
