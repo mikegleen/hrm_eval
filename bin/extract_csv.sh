@@ -4,9 +4,9 @@
 # --------------
 #
 # Run this script in the ~/pyprj/hrm/evaluation directory. Note that the
-# *exports* subdirectory is a symbolic link to
+# *data_exports* subdirectory is a symbolic link to
 # "~/Library/Mobile Documents/com~apple~CloudDocs/hrm_downloads/evaluation/data_exports"
-# This script will search the "exports" directory for zip files and process
+# This script will search the "data_exports" directory for zip files and process
 # the first one found.
 #
 # Output:
@@ -20,7 +20,7 @@
 # Usage:
 # ------
 #
-# Download the zip file to the 'exports' directory:
+# Download the zip file to the 'data_exports' directory:
 # Log on to www.surveymonkey.com.
 # Select "My Surveys" on the top menu.
 # Select Heath Robinson Museum Visitor Survey / Analyze.
@@ -34,8 +34,8 @@
 # The <datadir> field should be in the format yyyy-mm-dd.
 # The <lastnum> field should be the number of the last survey in the export.
 #
-# Download the file to hrm/evaluation/exports.
-# This script will unzip the file to exports/<datadir>/response/<exportname>/
+# Download the file to hrm/evaluation/data_exports.
+# This script will unzip the file to data_exports/<datadir>/response/<exportname>/
 # and then create the cleaned CSV file.
 #
 #
@@ -43,7 +43,7 @@
 # will merge them. The number of columns to skip in the second sheet is hard
 # coded in config.py.
 #
-# Also move the zip file from the exports directory to the exports/oldzipfiles
+# Also move the zip file from the data_exports directory to the data_exports/oldzipfiles
 # directory.
 #
 # 2018-08-31: get_emails processing removed.
@@ -58,13 +58,13 @@ CSVFILENAME="Heath Robinson Museum Short Visitor Survey.csv"
 CONDAENV=py311
 
 expand_one () {
-RESPDIR=exports/$DATADIR/response
-CLEANDIR=exports/$DATADIR/cleaned
+RESPDIR=data_exports/$DATADIR/response
+CLEANDIR=data_exports/$DATADIR/cleaned
 CSVDIR=$RESPDIR/$EXPORTNAME/CSV
 echo Creating $RESPDIR
 mkdir -p $RESPDIR
 # Rename the unzipped directory to be just the date.
-unzip exports/${DATADIR}_${EXPORTNAME}.zip -d $RESPDIR/$EXPORTNAME
+unzip data_exports/${DATADIR}_${EXPORTNAME}.zip -d $RESPDIR/$EXPORTNAME
 #
 mkdir -p $CLEANDIR
 [ -e "temp" ] || mkdir temp
@@ -73,7 +73,7 @@ python src/clean_title.py temp/rem_nuls.csv temp/clean_title.csv
 python ~/pyprj/misc/put_bom.py temp/clean_title.csv $CLEANDIR/$EXPORTNAME.csv
 #rm temp/*
 # python src/get_emails.py --dryrun $CLEANDIR/$EXPORTNAME.csv
-mv exports/${DATADIR}_${EXPORTNAME}.zip exports/old_zipfiles
+mv data_exports/${DATADIR}_${EXPORTNAME}.zip data_exports/old_zipfiles
 # echo
 # echo -e ${GREEN}If the dry run was ok, execute the following line to extract the
 # echo -e email addresses and update the database:${NOCOLOR}
@@ -93,18 +93,18 @@ GREEN='\033[0;32m'
 NOCOLOR='\033[0m'
 set -e
 pushd ~/pyprj/hrm/evaluation
-for zipfile in exports/*.zip; do
-if [[ $zipfile == "exports/*.zip" ]]; then
-    echo -e "${RED}Cannot find any ZIP files in ~/pyprj/hrm/evaluation/exports.${NOCOLOR}"
+for zipfile in data_exports/*.zip; do
+if [[ $zipfile == "data_exports/*.zip" ]]; then
+    echo -e "${RED}Cannot find any ZIP files in ~/pyprj/hrm/evaluation/data_exports.${NOCOLOR}"
     break
 fi
 echo Extracting $zipfile
-# zipfile = "exports/Data_All_yymmdd.zip"
+# zipfile = "data_exports/Data_All_yymmdd.zip"
 DATADIR=$(python -c "print('$zipfile'[-10:-4])")
 echo DATADIR = $DATADIR
 # DATADIR = "yymmdd"
 EXPORTNAME=`python -c "print('$zipfile'[:-4].split('_', 1)[1])"`
-# EXPORTNAME = "152"
+# EXPORTNAME = "Data_All_"
 echo EXPORTNAME =  $EXPORTNAME
 # Sanity check valid file name.
 re='^[0-9]+-[0-9]+-[0-9]+$'
