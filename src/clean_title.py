@@ -39,6 +39,8 @@ def clean_row(dirtyrow):
         n += 1
         soup = Bs(cell, 'html.parser')
         text = soup.get_text()
+        if cell != text:
+            print(n, cell, '-->', text)
         # print('{}: {}-->{}'.format(minor, cell, text))
         row.append(text)
     return row
@@ -62,7 +64,7 @@ def fix1date(row, col):
 
 
 def fix_dates(row):
-    # Warning: If changing columns, update fix1date to get the month and day
+    # Warning: If changing columns, update fix1date() to get the month and day
     #          order right.
     for col in DATE_COLS:
         fix1date(row, col)
