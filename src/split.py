@@ -12,11 +12,11 @@
     Getting to the Museum (inc. parking) - Not applicable / Don't know
     etc.
 
-    We take everything up the the string " - " to be the sub-question. Each
+    We take everything up to the string " - " to be the sub-question. Each
     sub-question is converted to a full question with numbers consisting of
-    the original question number * 100 plus the sub-question index based on 1
+    the original question number plus the sub-question index based on .01
     and append it to the right of the existing columns. So question q9 might
-    be converted to q901, q902, etc.
+    be converted to q9.01, q9.02, etc.
 
     The new questions will occupy the same columns as the previous compound
     question.
@@ -30,9 +30,9 @@ import csv
 import re
 import sys
 
-from config import SKIPCOLS
+from config import SKIPCOLS, SHORTSURVEY
 
-SPLIT_QUESTIONS = ('q9', )
+SPLIT_QUESTIONS = ('q1', ) if SHORTSURVEY else ('q9', )
 splitpat = re.compile(r'(.*) - (.*)')
 Qinfo = namedtuple('Qinfo', ('ix', 'len'))
 
@@ -47,8 +47,8 @@ def get_question_dict(qrow):
     :param qrow: The list of the first row returned from the CSV file which has
                  "q1", "q2", ... in question columns and "" otherwise.
     :return: OrderedDict mapping question number to a Qinfo namedtuple of
-            (offset, length) where length is the number of answers to each
-            question
+            (ix, len) where ix is the offset to the start of the question and
+            length is the number of answers to each question
     """
     # qnlist is [('q1', index1), ('q2', index2), ...]
     qnlist = [(qrow[i], i) for i in range(SKIPCOLS, len(qrow))
@@ -56,6 +56,7 @@ def get_question_dict(qrow):
     qnlist.append(('qx', len(qrow)))  # append dummy entry
     trace(2, 'qnlist: {}', qnlist)
     qdict = OrderedDict()
+    tup: tuple
     for i, tup in enumerate(qnlist[:-1]):  # tup is (q1, index1)
         limit = qnlist[i + 1][1]  # next question's column
         qdict[tup[0]] = Qinfo(tup[1], limit - tup[1])
@@ -115,11 +116,9 @@ def main():
             split_question(question, nq_row, nq_row2, na_row, question_dict)
     trace(2, 'nq_row(len {}): {}', len(nq_row), nq_row)
     writer.writerow(nq_row)
-
     trace(2, 'nq_row2(len {}): {}', len(nq_row2), nq_row2)
     writer.writerow(nq_row2)
-
-    writer.writerow(na_row)  # write row 3 with the aggregated answers
+    writer.writerow(na_row)  # write row 3 with the split answers
 
     # rows 4-n: the survey records
     for row in reader:
@@ -144,7 +143,9 @@ def getargs():
 
 
 if __name__ == '__main__':
-    assert sys.version_info >= (3, 6)
+    assert sys.version_info >= (3, 11)
+    if len(sys.argv) == 1:
+        sys.argv.append('-h')
     args = getargs()
     infile = codecs.open(args.infile, 'r', 'utf-8-sig')
     outfile = codecs.open(args.outfile, 'w', 'utf-8-sig')
