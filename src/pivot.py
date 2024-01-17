@@ -51,6 +51,8 @@ def getargs(argv):
 
 
 if __name__ == '__main__':
-    _args = getargs(sys.argv)
     assert sys.version_info >= (3, 11)
+    if len(sys.argv) == 1:
+        sys.argv.append('-h')
+    _args = getargs(sys.argv)
     main()
