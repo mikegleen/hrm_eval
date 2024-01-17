@@ -36,22 +36,22 @@ AGGLIST = [
                                  '- 5')),
              Aggmap('Quite', ('- satisfied', '- 7', '- 8')),
              Aggmap('Very', ('- 9', '- extremely satisfied'))
-            ]),
+             ]),
     ('q13', [Aggmap('Not very', ('Very unlikely', 'Unlikely',
                                  'Neither likely nor unlikely')),
              Aggmap('Likely', ('Likely', 'Very likely'))
-            ]),
+             ]),
     ('q15', [Aggmap('Female', ('Female',)),
              Aggmap('Male', ('Male',))
-            ]),
+             ]),
     ('q16', [Aggmap('Under 55', ('Under 16', '16 - 34', '35 - 54')),
              Aggmap('55 or over', ('55 - 64', '65 or over'))
-            ]),
+             ]),
     ('q17', [Aggmap('Not disabled', ('No',)),
              Aggmap('Disabled', ('Yes, limited a little', 'Yes, limited a lot')),
-            ]),
+             ]),
     ('q18', [Aggmap('White British',
-                 ('White - British (English/Scottish/Welsh/Northern Irish)',)),
+                    ('White - British (English/Scottish/Welsh/Northern Irish)',)),
              Aggmap('Other', ('White - Irish', 'other White', 'Indian',
                               'Pakistani', 'Bangladeshi', 'Chinese',
                               'other Asian background', 'Black African',
@@ -63,13 +63,13 @@ AGGLIST = [
     ('q19', [Aggmap('Harrow', ('Harrow borough',)),
              Aggmap('Other London', ('other London borough',)),
              Aggmap('Elsewhere', ('elsewhere in UK', 'Not in UK')),
-            ]),
+             ]),
 ]
-# All of the mappings for the sub-questions of question 9 are identical.
+# All the mappings for the sub-questions of question 9 are identical.
 AGGMAP9 = [Aggmap('not good', ('Very Poor', 'Poor', 'Neither Good nor Poor')),
            Aggmap('good', ('Good', 'Very Good'))
            ]
-# The format string will produce keys 'q9.01' .. 'q9.17'
+# The format string will produce keys 'q9.01' ... 'q9.17'
 AGGLIST9 = [(f'q{qn / 100:.02f}', AGGMAP9) for qn in range(901, 917)]
 AGGDICT = OrderedDict(AGGLIST + AGGLIST9)
 
@@ -93,6 +93,7 @@ def get_question_dict(qrow):
     qnlist.append(('qx', len(qrow)))  # append dummy entry
     trace(2, 'qnlist: {}', qnlist)
     qdict = OrderedDict()
+    tup: tuple
     for i, tup in enumerate(qnlist[:-1]):  # tup is (q1, index1)
         limit = qnlist[i + 1][1]  # next question's column
         qdict[tup[0]] = Qinfo(tup[1], limit - tup[1])
@@ -106,8 +107,8 @@ def inv_aggdict():
     names. For example, assuming we have only question 16 where AGGLIST has:
 
         ('q16', [Aggmap('Under 55', ('Under 16', '16 - 34', '35 - 54')),
-                 Aggmap('55 or over', ('55 - 64', '65 or over'))
-                ]),
+                 Aggmap('55 or over', ('55 - 64', '65 or over')),
+                 ]),
 
     INV_AGGDICT will be:
 
@@ -342,8 +343,7 @@ def getargs():
 
 
 if __name__ == '__main__':
-    if sys.version_info.major < 3 or sys.version_info.minor < 6:
-        raise ImportError('requires Python 3.6')
+    assert sys.version_info >= (3, 11)
     args = getargs()
     infile = codecs.open(args.infile, 'r', 'utf-8-sig')
     outfile = codecs.open(args.outfile, 'w', 'utf-8-sig')
